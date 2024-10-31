@@ -35,7 +35,7 @@ export default function App({ Component, pageProps }: AppProps) {
             theme="dark"
           />
           <footer className="text-center py-20 text-gray-400 text-sm">
-            © 2024 HemiVent. All rights reserved.
+            © 2024 HemShop. All rights reserved.
           </footer>
         </div>
       </Providers>

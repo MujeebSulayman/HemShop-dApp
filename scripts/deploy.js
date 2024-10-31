@@ -6,7 +6,7 @@ async function deployContract() {
   const servicePct = 5
 
   try {
-    contract = await ethers.deployContract('DappEventX', [servicePct])
+    contract = await ethers.deployContract('HemShop', [servicePct])
     await contract.waitForDeployment()
 
     console.log('Contracts deployed successfully.')
@@ -21,7 +21,7 @@ async function saveContractAddress(contract) {
   try {
     const address = JSON.stringify(
       {
-        dappEventXContract: contract.target,
+        hemShopContract: contract.target,
       },
       null,
       4

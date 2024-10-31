@@ -41,8 +41,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 weight;
     string model;
     string brand;
-    uint256 squ;
-    uint256 soldout;
+    uint256 sku;
+    bool soldout;
     bool wishlist;
     bool deleted;
     ReviewStruct[] reviews;
@@ -108,62 +108,62 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     _;
   }
 
-  function createProduct(
-    string memory name,
-    string memory description,
-    uint256 price,
-    uint256 stock,
-    string memory color,
-    string memory size,
-    string[] memory images,
-    string memory category,
-    string memory subCategory,
-    string memory model,
-    string memory brand,
-    uint256 weight,
-    uint256 squ
-  ) public onlyVerifiedSeller {
-    require(bytes(name).length > 0, 'Name cannot be empty');
-    require(bytes(description).length > 0, 'Description cannot be empty');
-    require(price > 0, 'Price must be greater than 0');
-    require(stock > 0, 'Stock must be greater than 0');
-    require(bytes(color).length > 0, 'Color cannot be empty');
-    require(images.length > 0, 'Images cannot be empty');
-    require(images.length < 5, 'Images cannot be more than 5');
-    require(bytes(size).length > 0, 'Size cannot be empty');
-    require(bytes(category).length > 0, 'Category cannot be empty');
-    require(bytes(subCategory).length > 0, 'Sub-category cannot be empty');
-    require(bytes(model).length > 0, 'Model cannot be empty');
-    require(bytes(brand).length > 0, 'Brand cannot be empty');
-    require(weight > 0, 'Weight must be greater than 0');
-    require(squ > 0, 'SKU must be greater than 0');
+  struct ProductInput {
+    string name;
+    string description;
+    uint256 price;
+    uint256 stock;
+    string color;
+    string size;
+    string[] images;
+    string category;
+    string subCategory;
+    string model;
+    string brand;
+    uint256 weight;
+    uint256 sku;
+  }
 
-    // Increment the total products counter
+  function createProduct(ProductInput calldata input) public onlyVerifiedSeller {
+    require(bytes(input.name).length > 0, 'Name cannot be empty');
+    require(bytes(input.description).length > 0, 'Description cannot be empty');
+    require(input.price > 0, 'Price must be greater than 0');
+    require(input.stock > 0, 'Stock must be greater than 0');
+    require(bytes(input.color).length > 0, 'Color cannot be empty');
+    require(input.images.length > 0, 'Images cannot be empty');
+    require(input.images.length < 5, 'Images cannot be more than 5');
+    require(bytes(input.size).length > 0, 'Size cannot be empty');
+    require(bytes(input.category).length > 0, 'Category cannot be empty');
+    require(bytes(input.subCategory).length > 0, 'Sub-category cannot be empty');
+    require(bytes(input.model).length > 0, 'Model cannot be empty');
+    require(bytes(input.brand).length > 0, 'Brand cannot be empty');
+    require(input.weight > 0, 'Weight must be greater than 0');
+    require(input.sku > 0, 'SKU must be greater than 0');
+
     _TotalProducts.increment();
 
-    // Create the product
     ProductStruct memory product;
     product.id = _TotalProducts.current();
     product.seller = msg.sender;
-    product.name = name;
-    product.description = description;
-    product.price = price;
-    product.stock = stock;
-    product.color = color;
-    product.size = size;
-    product.images = images;
-    product.category = category;
-    product.subCategory = subCategory;
-    product.model = model;
-    product.brand = brand;
-    product.weight = weight;
-    product.squ = squ;
+    product.name = input.name;
+    product.description = input.description;
+    product.price = input.price;
+    product.stock = input.stock;
+    product.color = input.color;
+    product.size = input.size;
+    product.images = input.images;
+    product.category = input.category;
+    product.subCategory = input.subCategory;
+    product.model = input.model;
+    product.brand = input.brand;
+    product.weight = input.weight;
+    product.sku = input.sku;
+    product.soldout = false;
+    product.deleted = false;
 
-    // Mint the new product
     uint256 newProductId = _TotalProducts.current();
     _mint(msg.sender, newProductId);
 
-    // Store the product
     products[newProductId] = product;
     productExists[newProductId] = true;
     sellerProducts[msg.sender].push(newProductId);
@@ -171,51 +171,40 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function updateProduct(
     uint256 productId,
-    string memory name,
-    string memory description,
-    uint256 price,
-    uint256 stock,
-    string memory color,
-    string memory size,
-    string[] memory images,
-    string memory category,
-    string memory subCategory,
-    string memory model,
-    string memory brand,
-    uint256 weight,
-    uint256 squ
+    ProductInput calldata input
   ) external onlyVerifiedSeller {
     require(products[productId].seller == msg.sender, 'Only the seller can update their product');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
-    require(bytes(name).length > 0, 'Name cannot be empty');
-    require(bytes(description).length > 0, 'Description cannot be empty');
-    require(price > 0, 'Price must be greater than 0');
-    require(images.length > 0, 'Images cannot be empty');
-    require(images.length < 5, 'Images cannot be more than 5');
-    require(stock > 0, 'Stock must be greater than 0');
-    require(bytes(color).length > 0, 'Color cannot be empty');
-    require(bytes(size).length > 0, 'Size cannot be empty');
-    require(bytes(category).length > 0, 'Category cannot be empty');
-    require(bytes(subCategory).length > 0, 'Sub-category cannot be empty');
-    require(bytes(model).length > 0, 'Model cannot be empty');
-    require(bytes(brand).length > 0, 'Brand cannot be empty');
-    require(weight > 0, 'Weight must be greater than 0');
-    require(squ > 0, 'SKU must be greater than 0');
+    
+    require(bytes(input.name).length > 0, 'Name cannot be empty');
+    require(bytes(input.description).length > 0, 'Description cannot be empty');
+    require(input.price > 0, 'Price must be greater than 0');
+    require(input.images.length > 0, 'Images cannot be empty');
+    require(input.images.length < 5, 'Images cannot be more than 5');
+    require(input.stock > 0, 'Stock must be greater than 0');
+    require(bytes(input.color).length > 0, 'Color cannot be empty');
+    require(bytes(input.size).length > 0, 'Size cannot be empty');
+    require(bytes(input.category).length > 0, 'Category cannot be empty');
+    require(bytes(input.subCategory).length > 0, 'Sub-category cannot be empty');
+    require(bytes(input.model).length > 0, 'Model cannot be empty');
+    require(bytes(input.brand).length > 0, 'Brand cannot be empty');
+    require(input.weight > 0, 'Weight must be greater than 0');
+    require(input.sku > 0, 'SKU must be greater than 0');
 
-    products[productId].name = name;
-    products[productId].description = description;
-    products[productId].price = price;
-    products[productId].stock = stock;
-    products[productId].color = color;
-    products[productId].size = size;
-    products[productId].images = images;
-    products[productId].category = category;
-    products[productId].subCategory = subCategory;
-    products[productId].model = model;
-    products[productId].brand = brand;
-    products[productId].weight = weight;
-    products[productId].squ = squ;
+    products[productId].name = input.name;
+    products[productId].description = input.description;
+    products[productId].price = input.price;
+    products[productId].stock = input.stock;
+    products[productId].color = input.color;
+    products[productId].size = input.size;
+    products[productId].images = input.images;
+    products[productId].category = input.category;
+    products[productId].subCategory = input.subCategory;
+    products[productId].model = input.model;
+    products[productId].brand = input.brand;
+    products[productId].weight = input.weight;
+    products[productId].sku = input.sku;
   }
 
   function deleteProduct(uint256 productId) external onlyVerifiedSellerOrOwner {
@@ -288,88 +277,81 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return products[productId];
   }
 
-  function getMyProducts() public view returns (ProductStruct[] memory myProducts) {
-    uint256 availableProducs;
-    for (uint i = 1; i < _TotalProducts.current(); i++) {
+  function getMyProducts() public view returns (ProductStruct[] memory) {
+    uint256 availableProducts;
+    for (uint i = 1; i <= _TotalProducts.current(); i++) {
       if (products[i].seller == msg.sender && !products[i].deleted) {
-        availableProducs++;
+        availableProducts++;
       }
     }
-    ProductStruct[] memory myProducts = new ProductStruct[](availableProducs);
+    
+    ProductStruct[] memory productsList = new ProductStruct[](availableProducts);
     uint256 index = 0;
-    for (uint i = 1; i < _TotalProducts.current(); i++) {
+    for (uint i = 1; i <= _TotalProducts.current(); i++) {
       if (products[i].seller == msg.sender && !products[i].deleted) {
-        myProducts[index] = products[i];
+        productsList[index] = products[i];
         index++;
       }
     }
-    return myProducts;
+    return productsList;
   }
 
   function getAllProducts() public view returns (ProductStruct[] memory) {
-    uint256 availableProducs;
-    for (uint i = 1; i < _TotalProducts.current(); i++) {
+    uint256 availableProducts;
+    for (uint i = 1; i <= _TotalProducts.current(); i++) {
       if (!products[i].deleted) {
-        availableProducs++;
+        availableProducts++;
       }
     }
-    ProductStruct[] memory allProducts = new ProductStruct[](availableProducs);
+    
+    ProductStruct[] memory allProductsList = new ProductStruct[](availableProducts);
     uint256 index = 0;
-    for (uint i = 1; i < _TotalProducts.current(); i++) {
+    for (uint i = 1; i <= _TotalProducts.current(); i++) {
       if (!products[i].deleted) {
-        allProducts[index] = products[i];
+        allProductsList[index] = products[i];
         index++;
       }
     }
-    return allProducts;
+    return allProductsList;
   }
 
   function buyProduct(uint256 productId) external payable nonReentrant {
-    // Validate product state
+    require(
+      sellerStatus[products[productId].seller] == SellerStatus.Verified,
+      'Seller is not verified'
+    );
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
     require(products[productId].stock > 0, 'Product is out of stock');
-    require(!products[productId].soldout, 'Product is already soldout');
+    require(products[productId].soldout == false, 'Product is already soldout');
     require(products[productId].seller != msg.sender, 'Cannot buy your own product');
-    
+
     uint256 price = products[productId].price;
     require(msg.value >= price, 'Insufficient funds');
 
-    // Update product state
     products[productId].stock--;
     if (products[productId].stock == 0) {
-        products[productId].soldout = true;
+      products[productId].soldout = true;
     }
 
-    // Record the transaction
-    _recordPurchase(
-        productId,
-        msg.sender,
-        products[productId].seller,
-        price,
-        price
-    );
+    _recordPurchase(productId, msg.sender, products[productId].seller, price, price);
     _TotalSales.increment();
 
-    // Return excess payment if any
+    // Return excess payment
     uint256 excess = msg.value - price;
     if (excess > 0) {
-        payTo(msg.sender, excess);
+      payTo(msg.sender, excess);
     }
 
     emit ProductPurchased(
-        productId, 
-        msg.sender, 
-        products[productId].seller, 
-        price, 
-        block.timestamp
+      productId,
+      msg.sender,
+      products[productId].seller,
+      price,
+      block.timestamp
     );
   }
 
-  function payTo(address to, uint256 amount) internal {
-    (bool success, ) = payable(to).call{ value: amount }('');
-    require(success, 'Transfer failed');
-  }
 
   function registerSeller() external {
     require(!registeredSellers[msg.sender], 'Already registered');
@@ -379,18 +361,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   }
 
   function updateSellerStatus(address seller, SellerStatus status) external onlyOwner {
-    require(seller != address(0), "Invalid seller address");
-    require(registeredSellers[seller], "Seller not registered");
-    require(sellerStatus[seller] != status, "Status already set");
-    
+    require(seller != address(0), 'Invalid seller address');
+    require(registeredSellers[seller], 'Seller not registered');
+    require(sellerStatus[seller] != status, 'Status already set');
+
     // Special validations for certain status changes
     if (status == SellerStatus.Verified) {
-        require(
-            sellerStatus[seller] == SellerStatus.Pending,
-            "Can only verify pending sellers"
-        );
+      require(sellerStatus[seller] == SellerStatus.Pending, 'Can only verify pending sellers');
     }
-    
+
     sellerStatus[seller] = status;
     emit SellerStatusUpdated(seller, status);
   }
@@ -415,7 +394,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     buyerPurchaseHistory[buyer].push(purchase);
     sellerPurchaseHistory[seller].push(purchase);
 
-  
     sellerBalances[seller] += totalAmount;
 
     emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
@@ -423,18 +401,18 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function withdraw() external onlyVerifiedSellerOrOwner {
     uint256 balance = sellerBalances[msg.sender];
-    require(balance > 0, "No balance to withdraw");
-    
+    require(balance > 0, 'No balance to withdraw');
+
     // Calculate service fee
     uint256 serviceFee = (balance * servicePct) / 100;
     uint256 sellerAmount = balance - serviceFee;
-    
+
     // Reset balance before transfer
     sellerBalances[msg.sender] = 0;
-    
+
     payTo(owner(), serviceFee);
     payTo(msg.sender, sellerAmount);
-    
+
     emit BalanceUpdated(msg.sender, 0);
   }
 
@@ -452,5 +430,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     address seller
   ) external view returns (PurchaseHistoryStruct[] memory) {
     return sellerPurchaseHistory[seller];
+  }
+
+  function payTo(address to, uint256 amount) internal {
+    require(to != address(0), 'Invalid address');
+    (bool success, ) = payable(to).call{ value: amount }('');
+    require(success, 'Transfer failed');
   }
 }

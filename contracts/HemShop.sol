@@ -94,6 +94,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 price,
     uint256 timestamp
   );
+  event DeliveryStatusUpdated(uint256 indexed productId, address indexed buyer, bool isDelivered);
 
   modifier onlyVerifiedSeller() {
     require(sellerStatus[msg.sender] == SellerStatus.Verified, 'Seller not verified');
@@ -222,6 +223,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(rating > 0 && rating <= 5, 'Rating must be between 1 and 5');
     require(bytes(comment).length > 0, 'Comment cannot be empty');
 
+    _TotalReviews.increment();
     ReviewStruct memory review;
     review.reviewId = _TotalReviews.current();
     review.reviewer = msg.sender;
@@ -316,12 +318,12 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   }
 
   function buyProduct(uint256 productId) external payable nonReentrant {
+    require(productExists[productId], 'Product does not exist');
+    require(!products[productId].deleted, 'Product is deleted');
     require(
       sellerStatus[products[productId].seller] == SellerStatus.Verified,
       'Seller is not verified'
     );
-    require(productExists[productId], 'Product does not exist');
-    require(!products[productId].deleted, 'Product is deleted');
     require(products[productId].stock > 0, 'Product is out of stock');
     require(products[productId].soldout == false, 'Product is already soldout');
     require(products[productId].seller != msg.sender, 'Cannot buy your own product');
@@ -436,5 +438,39 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(to != address(0), 'Invalid address');
     (bool success, ) = payable(to).call{ value: amount }('');
     require(success, 'Transfer failed');
+  }
+
+  function markPurchaseDelivered(uint256 productId, address buyer) external onlyVerifiedSellerOrOwner {
+    bool found = false;
+    
+    // Update buyer's purchase history
+    for (uint i = 0; i < buyerPurchaseHistory[buyer].length; i++) {
+        if (buyerPurchaseHistory[buyer][i].productId == productId) {
+            require(!buyerPurchaseHistory[buyer][i].isDelivered, "Already marked as delivered");
+            require(
+                buyerPurchaseHistory[buyer][i].seller == msg.sender || owner() == msg.sender,
+                "Only seller or owner can mark as delivered"
+            );
+            buyerPurchaseHistory[buyer][i].isDelivered = true;
+            found = true;
+            break;
+        }
+    }
+    
+    // Update seller's p
+    if (found) {
+        address seller = products[productId].seller;
+        for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
+            if (sellerPurchaseHistory[seller][i].productId == productId && 
+                sellerPurchaseHistory[seller][i].buyer == buyer) {
+                sellerPurchaseHistory[seller][i].isDelivered = true;
+                break;
+            }
+        }
+        
+        emit DeliveryStatusUpdated(productId, buyer, true);
+    } else {
+        revert("Purchase not found");
+    }
   }
 }

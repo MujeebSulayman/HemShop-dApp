@@ -2,7 +2,7 @@
 
 HemShop is a Web3-powered e-commerce platform that enables global commerce using cryptocurrency payments. Built with Next.js, TypeScript, and Ethereum smart contracts, it provides a secure and decentralized marketplace for buying and selling products.
 
-![HemShop Platform](./screenshots/0.png)
+![HemShop Platform](./public/screenshot.jpg)
 
 ## 🌟 Key Features
 
@@ -120,6 +120,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## 📧 Contact
 
-Your Name - [@theHemjay](https://twitter.com/theHemjay)
+Message me on X - [@theHemjay](https://twitter.com/theHemjay)
 
 Project Link: [https://github.com/MujeebSulayman/HemShop-dApp](https://github.com/MujeebSulayman/HemShop-dApp)

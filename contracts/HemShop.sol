@@ -17,20 +17,13 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   uint256 public servicePct;
 
-  struct Review {
+  struct ReviewStruct {
     address reviewer;
     uint256 rating;
     string comment;
   }
 
-  struct Specification {
-    uint256 SKU;
-    uint256 weight;
-    string model;
-    string brand;
-  }
-
-  struct Product {
+  struct ProductStruct {
     uint256 id;
     address seller;
     string name;
@@ -41,14 +34,18 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string size;
     string[] images;
     string category;
-    Specification specs;
+    string subCategory;
+    uint256 weight;
+    string model;
+    string brand;
+    uint256 squ;
     bool sold;
     bool wishlist;
-    bool isActive;
-    Review[] reviews;
+    bool deleted;
+    ReviewStruct[] reviews;
   }
 
-  mapping(uint256 => Product) public products;
+  mapping(uint256 => ProductStruct) public products;
   mapping(address => uint256[]) public sellerProducts;
 
   enum SellerStatus {
@@ -58,9 +55,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     Suspended
   }
 
-  struct PurchaseHistory {
+  struct PurchaseHistoryStruct {
     uint256 productId;
-    uint256 price;
+    uint256 totalAmount;
+    uint256 basePrice;
     uint256 timestamp;
     address buyer;
     address seller;
@@ -69,8 +67,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   mapping(address => uint256) public sellerBalances;
   mapping(address => SellerStatus) public sellerStatus;
-  mapping(address => PurchaseHistory[]) public buyerPurchaseHistory;
-  mapping(address => PurchaseHistory[]) public sellerPurchaseHistory;
+  mapping(address => PurchaseHistoryStruct[]) public buyerPurchaseHistory;
+  mapping(address => PurchaseHistoryStruct[]) public sellerPurchaseHistory;
   mapping(address => bool) public registeredSellers;
 
   event SellerRegistered(address indexed seller, uint256 timestamp);
@@ -80,7 +78,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 indexed productId,
     address indexed buyer,
     address indexed seller,
-    uint256 price,
+    uint256 totalAmount,
+    uint256 basePrice,
     uint256 timestamp
   );
 
@@ -98,15 +97,95 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string memory size,
     string[] memory images,
     string memory category,
-    Specification memory specs
+    string memory subCategory,
+    string memory model,
+    string memory brand,
+    uint256 weight,
+    uint256 squ
   ) public onlyVerifiedSeller {
     require(bytes(name).length > 0, 'Name cannot be empty');
     require(bytes(description).length > 0, 'Description cannot be empty');
     require(price > 0, 'Price must be greater than 0');
     require(stock > 0, 'Stock must be greater than 0');
     require(bytes(color).length > 0, 'Color cannot be empty');
+    require(images.length > 0, 'Images cannot be empty');
+    require(images.length < 5, 'Images cannot be more than 5');
     require(bytes(size).length > 0, 'Size cannot be empty');
     require(bytes(category).length > 0, 'Category cannot be empty');
+    require(bytes(subCategory).length > 0, 'Sub-category cannot be empty');
+    require(bytes(model).length > 0, 'Model cannot be empty');
+    require(bytes(brand).length > 0, 'Brand cannot be empty');
+    require(weight > 0, 'Weight must be greater than 0');
+    require(squ > 0, 'SKU must be greater than 0');
+
+    // Increment the total products counter
+    _TotalProducts.increment();
+
+    // Create the product
+    ProductStruct memory product;
+    product.id = _TotalProducts.current();
+    product.seller = msg.sender;
+    product.name = name;
+    product.description = description;
+    product.price = price;
+    product.stock = stock;
+    product.color = color;
+    product.size = size;
+    product.images = images;
+    product.category = category;
+    product.subCategory = subCategory;
+    product.model = model;
+    product.brand = brand;
+    product.weight = weight;
+    product.squ = squ;
+
+    // Mint the new product
+    uint256 newProductId = _TotalProducts.current();
+    _mint(msg.sender, newProductId);
+
+    // Store the product
+    products[newProductId] = product;
+    sellerProducts[msg.sender].push(newProductId);
+  }
+
+  function updateProduct(
+    uint256 productId,
+    string memory name,
+    string memory description,
+    uint256 price,
+    uint256 stock,
+    string memory color,
+    string memory size,
+    string[] memory images,
+    string memory category,
+    string memory subCategory,
+    string memory model,
+    string memory brand,
+    uint256 weight,
+    uint256 squ
+  ) external onlyVerifiedSeller {
+    require(products[productId].seller == msg.sender, 'Only the seller can update their product');
+    require(!products[productId].deleted, 'Product is deleted');
+    require(bytes(name).length > 0, 'Name cannot be empty');
+    require(bytes(description).length > 0, 'Description cannot be empty');
+    require(price > 0, 'Price must be greater than 0');
+    require(images.length > 0, 'Images cannot be empty');
+    require(images.length < 5, 'Images cannot be more than 5');
+    require(stock > 0, 'Stock must be greater than 0');
+    require(bytes(color).length > 0, 'Color cannot be empty');
+    require(bytes(size).length > 0, 'Size cannot be empty');
+    require(bytes(category).length > 0, 'Category cannot be empty');
+    require(bytes(subCategory).length > 0, 'Sub-category cannot be empty');
+    require(bytes(model).length > 0, 'Model cannot be empty');
+    require(bytes(brand).length > 0, 'Brand cannot be empty');
+    require(weight > 0, 'Weight must be greater than 0');
+    require(squ > 0, 'SKU must be greater than 0');
+  }
+
+  function deleteProduct(uint256 productId) external onlyVerifiedSeller {
+    require(products[productId].seller == msg.sender, 'Only the seller can delete their product');
+    require(!products[productId].deleted, 'Product is already deleted');
+    products[productId].deleted = true;
   }
 
   function registerSeller() external {
@@ -126,11 +205,13 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 productId,
     address buyer,
     address seller,
-    uint256 price
+    uint256 totalAmount,
+    uint256 basePrice
   ) internal {
-    PurchaseHistory memory purchase = PurchaseHistory({
+    PurchaseHistoryStruct memory purchase = PurchaseHistoryStruct({
       productId: productId,
-      price: price,
+      totalAmount: totalAmount,
+      basePrice: basePrice,
       timestamp: block.timestamp,
       buyer: buyer,
       seller: seller,
@@ -140,10 +221,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     buyerPurchaseHistory[buyer].push(purchase);
     sellerPurchaseHistory[seller].push(purchase);
 
-    // Update seller balance
-    sellerBalances[seller] += price;
+    // Update seller balance with total amount
+    sellerBalances[seller] += totalAmount;
 
-    emit PurchaseRecorded(productId, buyer, seller, price, block.timestamp);
+    emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
   }
 
   function withdrawBalance() external nonReentrant {
@@ -162,13 +243,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return sellerBalances[seller];
   }
 
-  function getBuyerPurchaseHistory(address buyer) external view returns (PurchaseHistory[] memory) {
+  function getBuyerPurchaseHistory(
+    address buyer
+  ) external view returns (PurchaseHistoryStruct[] memory) {
     return buyerPurchaseHistory[buyer];
   }
 
   function getSellerPurchaseHistory(
     address seller
-  ) external view returns (PurchaseHistory[] memory) {
+  ) external view returns (PurchaseHistoryStruct[] memory) {
     return sellerPurchaseHistory[seller];
   }
 }

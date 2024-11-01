@@ -1,11 +1,12 @@
 import React from 'react'
 
-const page = () => {
+const AdminDashboard = () => {
   return (
     <div>
       <h1>Admin Dashboard</h1>
+      {/* Stats display */}
     </div>
   )
 }
 
-export default page
+export default AdminDashboard

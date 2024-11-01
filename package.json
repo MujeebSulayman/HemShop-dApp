@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@headlessui/react": "1.7.17",
+    "@heroicons/react": "2.1.5",
     "@rainbow-me/rainbowkit": "^1.0.10",
     "@rainbow-me/rainbowkit-siwe-next-auth": "^0.3.0",
     "@reduxjs/toolkit": "1.9.6",

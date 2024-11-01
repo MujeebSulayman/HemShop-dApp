@@ -108,10 +108,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   );
   event DeliveryStatusUpdated(uint256 indexed productId, address indexed buyer, bool isDelivered);
 
-  // modifier onlyVerifiedSeller() {
-  //   require(sellerStatus[msg.sender] == SellerStatus.Verified, 'Seller not verified');
-  //   _;
-  // }
 
   modifier onlyVerifiedSellerOrOwner() {
     require(
@@ -517,7 +513,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       }
     }
 
-    // Update seller's p
+    // Update seller's purchase history 
     if (found) {
       address seller = products[productId].seller;
       for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
@@ -534,5 +530,41 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     } else {
       revert('Purchase not found');
     }
+  }
+
+  
+  function getProductsAsSeller(address seller) external view onlyOwner returns (ProductStruct[] memory) {
+    uint256 availableProducts;
+    for (uint i = 1; i <= _TotalProducts.current(); i++) {
+      if (products[i].seller == seller && !products[i].deleted) {
+        availableProducts++;
+      }
+    }
+
+    ProductStruct[] memory productsList = new ProductStruct[](availableProducts);
+    uint256 index = 0;
+    for (uint i = 1; i <= _TotalProducts.current(); i++) {
+      if (products[i].seller == seller && !products[i].deleted) {
+        productsList[index] = products[i];
+        index++;
+      }
+    }
+    return productsList;
+  }
+
+  function getBuyerPurchaseHistoryAsAdmin(
+    address buyer
+  ) external view onlyOwner returns (PurchaseHistoryStruct[] memory) {
+    return buyerPurchaseHistory[buyer];
+  }
+
+  function getSellerPurchaseHistoryAsAdmin(
+    address seller
+  ) external view onlyOwner returns (PurchaseHistoryStruct[] memory) {
+    return sellerPurchaseHistory[seller];
+  }
+
+  function getSellerBalanceAsAdmin(address seller) external view onlyOwner returns (uint256) {
+    return sellerBalances[seller];
   }
 }

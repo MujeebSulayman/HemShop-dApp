@@ -1,56 +1,109 @@
-export interface TruncateParams {
-  text: string
-  startChars: number
-  endChars: number
-  maxLength: number
-}
-
-export interface EventParams {
+export interface ProductParams {
   id?: number
-  title: string
-  imageUrl: string
+  seller: string
+  name: string
   description: string
-  ticketCost: number | string
-  capacity: number | string
-  startsAt: number | string
-  endsAt: number | string
+  price: number
+  stock: number
+  color: string
+  size: string
+  images: string[]
+  category: string
+  subCategory: string
+  weight: number
+  model: string
+  brand: string
+  sku: number
 }
 
-export interface EventStruct {
+export interface ProductStruct {
   id: number
-  title: string
-  imageUrl: string
+  seller: string
+  name: string
   description: string
-  owner: string
-  sales: number
-  ticketCost: number
-  capacity: number
-  seats: number
-  startsAt: number
-  endsAt: number
-  timestamp: number
+  price: number
+  stock: number
+  color: string
+  size: string
+  images: string[]
+  category: string
+  subCategory: string
+  weight: number
+  model: string
+  brand: string
+  sku: number
+  soldout: boolean
+  wishlist: boolean
   deleted: boolean
-  paidOut: boolean
-  refunded: boolean
-  minted: boolean
+  reviews: ReviewStruct[]
 }
 
-export interface TicketStruct {
+export interface ReviewParams {
   id: number
-  eventId: number
-  owner: string
-  ticketCost: number
+  rating: number
+  comment: string
+}
+
+export interface CategoryParams {
+  id?: number
+  name: string
+  slug: string
+  description?: string
+  image?: string
+}
+
+export interface SubCategoryParams extends CategoryParams {
+  parentCategoryId: number
+}
+
+export interface CategoryStruct {
+  id: number
+  name: string
+  slug: string
+  description?: string
+  image?: string
+  subCategories: SubCategoryStruct[]
+  productCount?: number
+  isActive: boolean
+}
+
+export interface SubCategoryStruct extends Omit<CategoryStruct, 'subCategories'> {
+  parentCategoryId: number
+}
+
+export interface ReviewStruct {
+  reviewId: number
+  reviewer: string
+  rating: number
+  comment: string
+  deleted: boolean
+}
+
+export interface ShippingDetails {
+  fullName: string
+  streetAddress: string
+  city: string
+  state: string
+  country: string
+  postalCode: string
+  phone: string
+  email: string
+}
+
+export interface PurchaseHistoryStruct {
+  productId: number
+  totalAmount: number
+  basePrice: number
   timestamp: number
-  refunded: boolean
-  minted: boolean
+  buyer: string
+  seller: string
+  isDelivered: boolean
+  shippingDetails: ShippingDetails
 }
 
-export interface GlobalState {
-  event: EventStruct | null
-  tickets: TicketStruct[]
-  ticketModal: string
-}
-
-export interface RootState {
-  globalStates: GlobalState
+export enum SellerStatus {
+  Unverified,
+  Pending,
+  Verified,
+  Suspended
 }

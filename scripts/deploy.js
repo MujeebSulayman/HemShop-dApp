@@ -6,34 +6,39 @@ async function deployContract() {
   const servicePct = 5
 
   try {
-    contract = await ethers.deployContract('HemShop', [servicePct])
-    await contract.waitForDeployment()
+    const HemShopFactory = await ethers.getContractFactory("HemShop")
+    console.log('Deploying HemShop contract...')
 
-    console.log('Contracts deployed successfully.')
+    contract = await HemShopFactory.deploy(servicePct)
+    
+    await contract.waitForDeployment()
+    const deployedAddress = await contract.getAddress()
+
+    const deployedCode = await ethers.provider.getCode(deployedAddress)
+    if (deployedCode === '0x') {
+      throw new Error('Contract deployment failed - no code at address')
+    }
+
+    console.log(`HemShop deployed to: ${deployedAddress}`)
     return contract
   } catch (error) {
-    console.error('Error deploying contracts:', error)
+    console.error('Error deploying contract:', error)
     throw error
   }
 }
 
 async function saveContractAddress(contract) {
   try {
-    const address = JSON.stringify(
-      {
-        hemShopContract: contract.target,
-      },
-      null,
-      4
-    )
+    const deployedAddress = await contract.getAddress()
+    const addressData = {
+      hemShopContract: deployedAddress
+    }
 
-    fs.writeFile('./contracts/contractAddress.json', address, 'utf8', (error) => {
-      if (error) {
-        console.error('Error saving contract address:', err)
-      } else {
-        console.log('Deployed contract address:', address)
-      }
-    })
+    fs.writeFileSync(
+      './contracts/contractAddress.json',
+      JSON.stringify(addressData, null, 2)
+    )
+    console.log('Contract address saved:', deployedAddress)
   } catch (error) {
     console.error('Error saving contract address:', error)
     throw error
@@ -41,15 +46,14 @@ async function saveContractAddress(contract) {
 }
 
 async function main() {
-  let contract
-
   try {
-    contract = await deployContract()
+    console.log('Starting deployment process...')
+    const contract = await deployContract()
     await saveContractAddress(contract)
-
-    console.log('Contract deployment completed successfully.')
+    console.log('Deployment completed successfully')
   } catch (error) {
-    console.error('Unhandled error:', error)
+    console.error('Deployment failed:', error)
+    process.exitCode = 1
   }
 }
 

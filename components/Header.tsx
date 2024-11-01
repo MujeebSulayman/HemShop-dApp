@@ -8,7 +8,7 @@ import { useAccount } from 'wagmi'
 import { HiOutlineShoppingBag } from 'react-icons/hi'
 import { BiStore } from 'react-icons/bi'
 import { Menu, Transition } from '@headlessui/react'
-import { FiChevronDown } from 'react-icons/fi'
+import { FiChevronDown, FiUser, FiPackage, FiSettings } from 'react-icons/fi'
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -31,8 +31,21 @@ const Header: React.FC = () => {
   ]
 
   const accountLinks = [
-    { href: '/dashboard/orders', label: 'My Orders' },
-    { href: '/dashboard/store', label: 'Seller Dashboard' },
+    { 
+      href: '/dashboard/buyer', 
+      label: 'Buyer Dashboard',
+      icon: FiUser
+    },
+    { 
+      href: '/dashboard/seller', 
+      label: 'Seller Dashboard',
+      icon: FiPackage
+    },
+    { 
+      href: '/dashboard/admin', 
+      label: 'Admin Dashboard',
+      icon: FiSettings
+    },
   ]
 
   return (
@@ -93,8 +106,9 @@ const Header: React.FC = () => {
                             href={link.href}
                             className={`${
                               active ? 'bg-white/10' : ''
-                            } text-white block px-4 py-2 text-base`}
+                            } text-white flex items-center gap-2 px-4 py-2 text-base`}
                           >
+                            <link.icon className="w-4 h-4" />
                             {link.label}
                           </Link>
                         )}

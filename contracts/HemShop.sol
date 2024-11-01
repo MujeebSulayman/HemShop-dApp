@@ -58,6 +58,17 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     Suspended
   }
 
+  struct ShippingDetails {
+    string fullName;
+    string streetAddress;
+    string city;
+    string state;
+    string country;
+    string postalCode;
+    string phone;
+    string email;
+  }
+
   struct PurchaseHistoryStruct {
     uint256 productId;
     uint256 totalAmount;
@@ -66,6 +77,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     address buyer;
     address seller;
     bool isDelivered;
+    ShippingDetails shippingDetails;
   }
 
   mapping(address => uint256) public sellerBalances;
@@ -96,10 +108,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   );
   event DeliveryStatusUpdated(uint256 indexed productId, address indexed buyer, bool isDelivered);
 
-  modifier onlyVerifiedSeller() {
-    require(sellerStatus[msg.sender] == SellerStatus.Verified, 'Seller not verified');
-    _;
-  }
+  // modifier onlyVerifiedSeller() {
+  //   require(sellerStatus[msg.sender] == SellerStatus.Verified, 'Seller not verified');
+  //   _;
+  // }
 
   modifier onlyVerifiedSellerOrOwner() {
     require(
@@ -125,7 +137,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 sku;
   }
 
-  function createProduct(ProductInput calldata input) public onlyVerifiedSeller {
+  function createProduct(ProductInput calldata input) public onlyVerifiedSellerOrOwner {
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
@@ -159,8 +171,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     product.brand = input.brand;
     product.weight = input.weight;
     product.sku = input.sku;
-    product.soldout = false;
-    product.deleted = false;
 
     uint256 newProductId = _TotalProducts.current();
     _mint(msg.sender, newProductId);
@@ -173,11 +183,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   function updateProduct(
     uint256 productId,
     ProductInput calldata input
-  ) external onlyVerifiedSeller {
+  ) external onlyVerifiedSellerOrOwner {
     require(products[productId].seller == msg.sender, 'Only the seller can update their product');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
-    
+
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
@@ -286,7 +296,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
         availableProducts++;
       }
     }
-    
+
     ProductStruct[] memory productsList = new ProductStruct[](availableProducts);
     uint256 index = 0;
     for (uint i = 1; i <= _TotalProducts.current(); i++) {
@@ -305,7 +315,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
         availableProducts++;
       }
     }
-    
+
     ProductStruct[] memory allProductsList = new ProductStruct[](availableProducts);
     uint256 index = 0;
     for (uint i = 1; i <= _TotalProducts.current(); i++) {
@@ -317,7 +327,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return allProductsList;
   }
 
-  function buyProduct(uint256 productId) external payable nonReentrant {
+  function buyProduct(
+    uint256 productId, 
+    ShippingDetails calldata shippingDetails
+  ) external payable nonReentrant {
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
     require(
@@ -327,6 +340,16 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(products[productId].stock > 0, 'Product is out of stock');
     require(products[productId].soldout == false, 'Product is already soldout');
     require(products[productId].seller != msg.sender, 'Cannot buy your own product');
+    
+    // Validate shipping details
+    require(bytes(shippingDetails.fullName).length > 0, 'Full name required');
+    require(bytes(shippingDetails.streetAddress).length > 0, 'Street address required');
+    require(bytes(shippingDetails.city).length > 0, 'City required');
+    require(bytes(shippingDetails.state).length > 0, 'State required');
+    require(bytes(shippingDetails.country).length > 0, 'Country required');
+    require(bytes(shippingDetails.postalCode).length > 0, 'Postal code required');
+    require(bytes(shippingDetails.phone).length > 0, 'Phone required');
+    require(bytes(shippingDetails.email).length > 0, 'Email required');
 
     uint256 price = products[productId].price;
     require(msg.value >= price, 'Insufficient funds');
@@ -336,7 +359,14 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       products[productId].soldout = true;
     }
 
-    _recordPurchase(productId, msg.sender, products[productId].seller, price, price);
+    _recordPurchaseWithShipping(
+      productId, 
+      msg.sender, 
+      products[productId].seller, 
+      price, 
+      price, 
+      shippingDetails
+    );
     _TotalSales.increment();
 
     // Return excess payment
@@ -354,6 +384,32 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     );
   }
 
+  function _recordPurchaseWithShipping(
+    uint256 productId,
+    address buyer,
+    address seller,
+    uint256 totalAmount,
+    uint256 basePrice,
+    ShippingDetails memory shippingDetails
+  ) internal {
+    PurchaseHistoryStruct memory purchase = PurchaseHistoryStruct({
+      productId: productId,
+      totalAmount: totalAmount,
+      basePrice: basePrice,
+      timestamp: block.timestamp,
+      buyer: buyer,
+      seller: seller,
+      isDelivered: false,
+      shippingDetails: shippingDetails
+    });
+
+    buyerPurchaseHistory[buyer].push(purchase);
+    sellerPurchaseHistory[seller].push(purchase);
+
+    sellerBalances[seller] += totalAmount;
+
+    emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
+  }
 
   function registerSeller() external {
     require(!registeredSellers[msg.sender], 'Already registered');
@@ -390,7 +446,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       timestamp: block.timestamp,
       buyer: buyer,
       seller: seller,
-      isDelivered: false
+      isDelivered: false,
+      shippingDetails: ShippingDetails('', '', '', '', '', '', '', '')
     });
 
     buyerPurchaseHistory[buyer].push(purchase);
@@ -440,37 +497,42 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(success, 'Transfer failed');
   }
 
-  function markPurchaseDelivered(uint256 productId, address buyer) external onlyVerifiedSellerOrOwner {
+  function markPurchaseDelivered(
+    uint256 productId,
+    address buyer
+  ) external onlyVerifiedSellerOrOwner {
     bool found = false;
-    
+
     // Update buyer's purchase history
     for (uint i = 0; i < buyerPurchaseHistory[buyer].length; i++) {
-        if (buyerPurchaseHistory[buyer][i].productId == productId) {
-            require(!buyerPurchaseHistory[buyer][i].isDelivered, "Already marked as delivered");
-            require(
-                buyerPurchaseHistory[buyer][i].seller == msg.sender || owner() == msg.sender,
-                "Only seller or owner can mark as delivered"
-            );
-            buyerPurchaseHistory[buyer][i].isDelivered = true;
-            found = true;
-            break;
-        }
+      if (buyerPurchaseHistory[buyer][i].productId == productId) {
+        require(!buyerPurchaseHistory[buyer][i].isDelivered, 'Already marked as delivered');
+        require(
+          buyerPurchaseHistory[buyer][i].seller == msg.sender || owner() == msg.sender,
+          'Only seller or owner can mark as delivered'
+        );
+        buyerPurchaseHistory[buyer][i].isDelivered = true;
+        found = true;
+        break;
+      }
     }
-    
+
     // Update seller's p
     if (found) {
-        address seller = products[productId].seller;
-        for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
-            if (sellerPurchaseHistory[seller][i].productId == productId && 
-                sellerPurchaseHistory[seller][i].buyer == buyer) {
-                sellerPurchaseHistory[seller][i].isDelivered = true;
-                break;
-            }
+      address seller = products[productId].seller;
+      for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
+        if (
+          sellerPurchaseHistory[seller][i].productId == productId &&
+          sellerPurchaseHistory[seller][i].buyer == buyer
+        ) {
+          sellerPurchaseHistory[seller][i].isDelivered = true;
+          break;
         }
-        
-        emit DeliveryStatusUpdated(productId, buyer, true);
+      }
+
+      emit DeliveryStatusUpdated(productId, buyer, true);
     } else {
-        revert("Purchase not found");
+      revert('Purchase not found');
     }
   }
 }

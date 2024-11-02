@@ -38,13 +38,13 @@ const AdminProducts = () => {
     try {
       setLoading(true)
       const data = await getProducts()
-      const formattedProducts = data.map(product => ({
+      const formattedProducts = data.map((product) => ({
         ...product,
         id: product.id.toString(),
         status: 'active',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }))
-      setProducts(formattedProducts)
+      setProducts(formattedProducts as Product[])
     } catch (error) {
       console.error('Error fetching products:', error)
       toast.error('Failed to fetch products')
@@ -192,9 +192,6 @@ const AdminProducts = () => {
                       </div>
                       <p className="text-indigo-400 font-semibold">{product.price} ETH</p>
                     </div>
-
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">{product.description}</p>
-
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-400">
                         Stock: <span className="text-white">{product.stock}</span>

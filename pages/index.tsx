@@ -39,30 +39,6 @@ const HomePage: NextPage = () => {
 
       <main className="w-full">
         <Hero />
-
-        {/* Products Section */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="flex justify-center items-center min-h-[200px]">
-              <FiLoader className="w-8 h-8 animate-spin text-purple-500" />
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-500">{error}</div>
-          ) : products.length === 0 ? (
-            <div className="text-center text-gray-400">
-              <p>No products available at the moment.</p>
-            </div>
-          ) : (
-            <>
-              {/* Featured Products */}
-
-              {/* All Products */}
-              <div>
-                <ProductList products={products} title="All Products" />
-              </div>
-            </>
-          )}
-        </section>
       </main>
     </div>
   )

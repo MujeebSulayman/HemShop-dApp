@@ -64,7 +64,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700/50">
             {!isCollapsed && (
               <span className="text-xl font-semibold text-white/90 transition-opacity duration-200">
-                Market
+                Admin Dashboard
               </span>
             )}
             <button 

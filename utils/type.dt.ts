@@ -107,3 +107,35 @@ export enum SellerStatus {
   Verified,
   Suspended
 }
+
+// Add contract event types
+export interface ProductPurchasedEvent {
+  productId: number
+  buyer: string
+  seller: string
+  price: number
+  timestamp: number
+}
+
+export interface DeliveryStatusUpdatedEvent {
+  productId: number
+  buyer: string
+  isDelivered: boolean
+}
+
+// Add input type to match contract
+export interface ProductInput {
+  name: string
+  description: string
+  price: number
+  stock: number
+  color: string
+  size: string
+  images: string[]
+  category: string
+  subCategory: string
+  model: string
+  brand: string
+  weight: number
+  sku: number
+}

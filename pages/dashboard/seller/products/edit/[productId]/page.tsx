@@ -1,12 +1,11 @@
 import React from 'react'
 
-const EditProductPage = () => {
+const page = () => {
   return (
     <div>
       <h1>Edit Product</h1>
-      <div>Product Edit Form</div>
     </div>
   )
 }
 
-export default EditProductPage 
+export default page

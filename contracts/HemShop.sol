@@ -114,15 +114,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   modifier onlyVerifiedSellerOrOwner() {
     address actingAs = adminImpersonating[msg.sender];
     if (actingAs != address(0)) {
-        require(
-            sellerStatus[actingAs] == SellerStatus.Verified || owner() == actingAs,
-            'Only verified seller or owner allowed'
-        );
+      require(
+        sellerStatus[actingAs] == SellerStatus.Verified || owner() == actingAs,
+        'Only verified seller or owner allowed'
+      );
     } else {
-        require(
-            sellerStatus[msg.sender] == SellerStatus.Verified || owner() == msg.sender,
-            'Only verified seller or owner allowed'
-        );
+      require(
+        sellerStatus[msg.sender] == SellerStatus.Verified || owner() == msg.sender,
+        'Only verified seller or owner allowed'
+      );
     }
     _;
   }
@@ -334,7 +334,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   }
 
   function buyProduct(
-    uint256 productId, 
+    uint256 productId,
     ShippingDetails calldata shippingDetails
   ) external payable nonReentrant {
     require(productExists[productId], 'Product does not exist');
@@ -346,7 +346,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(products[productId].stock > 0, 'Product is out of stock');
     require(products[productId].soldout == false, 'Product is already soldout');
     require(products[productId].seller != msg.sender, 'Cannot buy your own product');
-    
+
     // Validate shipping details
     require(bytes(shippingDetails.fullName).length > 0, 'Full name required');
     require(bytes(shippingDetails.streetAddress).length > 0, 'Street address required');
@@ -366,11 +366,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     }
 
     _recordPurchaseWithShipping(
-      productId, 
-      msg.sender, 
-      products[productId].seller, 
-      price, 
-      price, 
+      productId,
+      msg.sender,
+      products[productId].seller,
+      price,
+      price,
       shippingDetails
     );
     _TotalSales.increment();
@@ -523,7 +523,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       }
     }
 
-    // Update seller's purchase history 
+    // Update seller's purchase history
     if (found) {
       address seller = products[productId].seller;
       for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
@@ -543,13 +543,18 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   }
 
   function impersonateAccount(address account) external onlyOwner {
-    require(account != address(0), "Invalid account address");
+    require(account != address(0), 'Invalid account address');
     adminImpersonating[msg.sender] = account;
     emit AdminImpersonationChanged(msg.sender, account);
   }
-  
+
   function stopImpersonating() external onlyOwner {
     adminImpersonating[msg.sender] = address(0);
     emit AdminImpersonationChanged(msg.sender, address(0));
+  }
+
+  function changeServicePct(uint256 newPct) external onlyOwner {
+    require(newPct >= 0 && newPct <= 100, 'Invalid percentage');
+    servicePct = newPct;
   }
 }

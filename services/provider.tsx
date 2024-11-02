@@ -1,11 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import {
-  GetSiweMessageOptions,
-  RainbowKitSiweNextAuthProvider,
-} from '@rainbow-me/rainbowkit-siwe-next-auth'
-import { WagmiConfig, configureChains, createConfig, sepolia } from 'wagmi'
+import { WagmiConfig, configureChains, createConfig } from 'wagmi'
 import { RainbowKitProvider, connectorsForWallets, darkTheme } from '@rainbow-me/rainbowkit'
 import {
   metaMaskWallet,
@@ -13,15 +9,12 @@ import {
   coinbaseWallet,
   rainbowWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { mainnet, hardhat } from 'wagmi/chains'
+import { sepolia, hardhat, mainnet } from 'wagmi/chains'
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
-import { Session } from 'next-auth'
-import { SessionProvider } from 'next-auth/react'
-
 
 const { chains, publicClient } = configureChains(
-  [mainnet, sepolia, hardhat],
+  [sepolia, hardhat, mainnet],
   [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID as string }), publicProvider()]
 )
 
@@ -46,36 +39,18 @@ const wagmiConfig = createConfig({
 })
 
 const demoAppInfo = {
-  appName: 'HemShop dApp',
+  appName: 'HemShop',
 }
 
-const getSiweMessageOptions: GetSiweMessageOptions = () => ({
-  statement: `
-  Once you're signed in, you'll be able to access all of our dApp's features.
-  Thank you for partnering with us!`,
-})
-
-export function Providers({
-  children,
-  pageProps,
-}: {
-  children: React.ReactNode
-  pageProps: {
-    session: Session
-  }
-}) {
+export function Providers({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => setMounted(true), [])
 
   return (
     <WagmiConfig config={wagmiConfig}>
-      <SessionProvider refetchInterval={0} session={pageProps.session}>
-        <RainbowKitSiweNextAuthProvider getSiweMessageOptions={getSiweMessageOptions}>
-          <RainbowKitProvider theme={darkTheme()} chains={chains} appInfo={demoAppInfo}>
-            {mounted && children}
-          </RainbowKitProvider>
-        </RainbowKitSiweNextAuthProvider>
-      </SessionProvider>
+      <RainbowKitProvider theme={darkTheme()} chains={chains} appInfo={demoAppInfo}>
+        {mounted && children}
+      </RainbowKitProvider>
     </WagmiConfig>
   )
 }

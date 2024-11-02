@@ -18,7 +18,7 @@ export default function App({ Component, pageProps }: AppProps) {
     return null
   } else {
     return (
-      <Providers pageProps={pageProps}>
+      <Providers>
         <div className="bg-black min-h-screen flex flex-col text-white">
           <Header />
           <Component {...pageProps} />

@@ -1,6 +1,6 @@
 import React from 'react'
 
-const store = () => {
+const Store = () => {
   return (
     <div>
       Store
@@ -8,4 +8,4 @@ const store = () => {
   )
 }
 
-export default store
+export default Store

@@ -1,6 +1,6 @@
 import React from 'react'
 
-const deals = () => {
+const Deals = () => {
   return (
     <div>
       Deals
@@ -8,4 +8,4 @@ const deals = () => {
   )
 }
 
-export default deals
+export default Deals

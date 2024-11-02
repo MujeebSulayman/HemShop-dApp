@@ -18,7 +18,7 @@ const HomePage: NextPage = () => {
         setLoading(true)
         const data: ProductStruct[] = await getProducts()
         // Filter out deleted and sold out products
-        const activeProducts = data.filter(product => !product.deleted && !product.soldout)
+        const activeProducts = data.filter((product) => !product.deleted && !product.soldout)
         setProducts(activeProducts)
       } catch (err) {
         setError('Failed to fetch products')
@@ -39,7 +39,7 @@ const HomePage: NextPage = () => {
 
       <main className="w-full">
         <Hero />
-        
+
         {/* Products Section */}
         <section className="py-12 px-4 sm:px-6 lg:px-8">
           {loading ? (
@@ -47,9 +47,7 @@ const HomePage: NextPage = () => {
               <FiLoader className="w-8 h-8 animate-spin text-purple-500" />
             </div>
           ) : error ? (
-            <div className="text-center text-red-500">
-              {error}
-            </div>
+            <div className="text-center text-red-500">{error}</div>
           ) : products.length === 0 ? (
             <div className="text-center text-gray-400">
               <p>No products available at the moment.</p>
@@ -57,19 +55,10 @@ const HomePage: NextPage = () => {
           ) : (
             <>
               {/* Featured Products */}
-              <div className="mb-12">
-                <ProductList 
-                  products={products.filter(p => p.featured)} 
-                  title="Featured Products" 
-                />
-              </div>
 
               {/* All Products */}
               <div>
-                <ProductList 
-                  products={products} 
-                  title="All Products" 
-                />
+                <ProductList products={products} title="All Products" />
               </div>
             </>
           )}

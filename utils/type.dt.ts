@@ -3,17 +3,17 @@ export interface ProductParams {
   seller: string
   name: string
   description: string
-  price: number
-  stock: number
+  price: string | number
+  stock: string | number
   color: string
   size: string
   images: string[]
-  category: string
-  subCategory: string
-  weight: number
+  categoryId: number
+  subCategoryId: number
+  weight: string | number
   model: string
   brand: string
-  sku: number
+  sku: string | number
 }
 
 export interface ProductStruct {
@@ -21,17 +21,17 @@ export interface ProductStruct {
   seller: string
   name: string
   description: string
-  price: number
-  stock: number
+  price: string | number
+  stock: string | number
   color: string
   size: string
   images: string[]
   category: string
   subCategory: string
-  weight: number
+  weight: string | number
   model: string
   brand: string
-  sku: number
+  sku: string | number
   soldout: boolean
   wishlist: boolean
   deleted: boolean
@@ -59,16 +59,16 @@ export interface SubCategoryParams extends CategoryParams {
 export interface CategoryStruct {
   id: number
   name: string
-  slug: string
-  description?: string
-  image?: string
-  subCategories: SubCategoryStruct[]
-  productCount?: number
   isActive: boolean
+  subCategoryIds: number[]
+  subCategories: SubCategoryStruct[]
 }
 
-export interface SubCategoryStruct extends Omit<CategoryStruct, 'subCategories'> {
+export interface SubCategoryStruct {
+  id: number
+  name: string
   parentCategoryId: number
+  isActive: boolean
 }
 
 export interface ReviewStruct {
@@ -105,7 +105,7 @@ export enum SellerStatus {
   Unverified,
   Pending,
   Verified,
-  Suspended
+  Suspended,
 }
 
 // Add contract event types
@@ -127,15 +127,16 @@ export interface DeliveryStatusUpdatedEvent {
 export interface ProductInput {
   name: string
   description: string
-  price: number
-  stock: number
+  price: string | number
+  stock: string | number
   color: string
   size: string
   images: string[]
-  category: string
-  subCategory: string
+  categoryId: number
+  subCategoryId: number
   model: string
   brand: string
-  weight: number
-  sku: number
+  weight: string | number
+  sku: string | number
+  seller: string
 }

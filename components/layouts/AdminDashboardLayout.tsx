@@ -4,7 +4,7 @@ import { useRouter } from 'next/router'
 import {
   HomeIcon, ShoppingCartIcon, UsersIcon, ChartBarIcon,
   CogIcon, CubeIcon, ShoppingBagIcon, ArrowPathIcon,
-  CurrencyDollarIcon, CheckBadgeIcon, BanknotesIcon
+  CurrencyDollarIcon, CheckBadgeIcon, BanknotesIcon, FolderIcon
 } from '@heroicons/react/24/outline'
 
 interface AdminDashboardLayoutProps {
@@ -32,6 +32,11 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
         { label: 'Users', path: '/dashboard/admin/users', icon: UsersIcon },
         { label: 'Sellers', path: '/dashboard/admin/sellers', icon: ShoppingBagIcon },
         { label: 'Seller Verification', path: '/dashboard/admin/seller-verification', icon: CheckBadgeIcon },
+        {
+          label: 'Categories',
+          path: '/dashboard/admin/categories',
+          icon: FolderIcon
+        },
       ]
     },
     {
@@ -51,8 +56,8 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
         className={`${
           isCollapsed ? 'w-20' : 'w-64'
         } bg-gray-800/95 backdrop-blur-sm border-r border-gray-700/50 
-        transition-all duration-300 ease-in-out transform fixed h-full
-        hover:shadow-lg hover:shadow-gray-800/20`}
+        transition-all duration-300 ease-in-out transform fixed h-[calc(100vh-4rem)]
+        top-16 hover:shadow-lg hover:shadow-gray-800/20 overflow-hidden`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -72,7 +77,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
           </div>
 
           {/* Navigation */}
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="flex-1 overflow-y-auto py-4 h-full">
             {navigationItems.map((section, idx) => (
               <div key={idx} className="mb-6 transition-transform duration-200 ease-in-out">
                 {!isCollapsed && (

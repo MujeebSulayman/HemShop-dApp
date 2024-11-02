@@ -18,6 +18,31 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   uint256 public servicePct;
 
+  struct Category {
+    uint256 id;
+    string name;
+    bool isActive;
+    uint256[] subCategoryIds;
+  }
+
+  struct SubCategory {
+    uint256 id;
+    string name;
+    uint256 parentCategoryId;
+    bool isActive;
+  }
+
+  mapping(uint256 => Category) private categories;
+  mapping(uint256 => SubCategory) private subCategories;
+  uint256 private _categoryCounter;
+  uint256 private _subCategoryCounter;
+
+  event CategoryCreated(uint256 indexed id, string name);
+  event SubCategoryCreated(uint256 indexed id, uint256 indexed parentId, string name);
+  event CategoryUpdated(uint256 indexed id, string name, bool isActive);
+  event SubCategoryUpdated(uint256 indexed id, string name, bool isActive);
+
+
   struct ReviewStruct {
     uint256 reviewId;
     address reviewer;
@@ -135,8 +160,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string color;
     string size;
     string[] images;
-    string category;
-    string subCategory;
+    uint256 categoryId;
+    uint256 subCategoryId;
     string model;
     string brand;
     uint256 weight;
@@ -152,8 +177,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(input.images.length > 0, 'Images cannot be empty');
     require(input.images.length < 5, 'Images cannot be more than 5');
     require(bytes(input.size).length > 0, 'Size cannot be empty');
-    require(bytes(input.category).length > 0, 'Category cannot be empty');
-    require(bytes(input.subCategory).length > 0, 'Sub-category cannot be empty');
+    require(input.categoryId > 0, 'Category cannot be empty');
+    require(input.subCategoryId > 0, 'Sub-category cannot be empty');
     require(bytes(input.model).length > 0, 'Model cannot be empty');
     require(bytes(input.brand).length > 0, 'Brand cannot be empty');
     require(input.weight > 0, 'Weight must be greater than 0');
@@ -171,8 +196,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     product.color = input.color;
     product.size = input.size;
     product.images = input.images;
-    product.category = input.category;
-    product.subCategory = input.subCategory;
+    product.category = categories[input.categoryId].name;
+    product.subCategory = subCategories[input.subCategoryId].name;
     product.model = input.model;
     product.brand = input.brand;
     product.weight = input.weight;
@@ -202,8 +227,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(input.stock > 0, 'Stock must be greater than 0');
     require(bytes(input.color).length > 0, 'Color cannot be empty');
     require(bytes(input.size).length > 0, 'Size cannot be empty');
-    require(bytes(input.category).length > 0, 'Category cannot be empty');
-    require(bytes(input.subCategory).length > 0, 'Sub-category cannot be empty');
+    require(input.categoryId > 0, 'Category cannot be empty');
+    require(input.subCategoryId > 0, 'Sub-category cannot be empty');
     require(bytes(input.model).length > 0, 'Model cannot be empty');
     require(bytes(input.brand).length > 0, 'Brand cannot be empty');
     require(input.weight > 0, 'Weight must be greater than 0');
@@ -216,8 +241,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     products[productId].color = input.color;
     products[productId].size = input.size;
     products[productId].images = input.images;
-    products[productId].category = input.category;
-    products[productId].subCategory = input.subCategory;
+    products[productId].category = categories[input.categoryId].name;
+    products[productId].subCategory = subCategories[input.subCategoryId].name;
     products[productId].model = input.model;
     products[productId].brand = input.brand;
     products[productId].weight = input.weight;
@@ -233,6 +258,136 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(!products[productId].deleted, 'Product is already deleted');
     products[productId].deleted = true;
   }
+
+  function createCategory(string memory _name) external onlyOwner {
+    require(bytes(_name).length > 0, 'Category name cannot be empty');
+
+    _categoryCounter++;
+    categories[_categoryCounter] = Category({
+      id: _categoryCounter,
+      name: _name,
+      isActive: true,
+      subCategoryIds: new uint256[](0)
+    });
+
+    emit CategoryCreated(_categoryCounter, _name);
+  }
+
+  function createSubCategory(uint256 _parentId, string memory _name) external onlyOwner {
+    require(categories[_parentId].id != 0, 'Parent category does not exist');
+    require(bytes(_name).length > 0, 'Subcategory name cannot be empty');
+
+    _subCategoryCounter++;
+    subCategories[_subCategoryCounter] = SubCategory({
+      id: _subCategoryCounter,
+      name: _name,
+      parentCategoryId: _parentId,
+      isActive: true
+    });
+
+    categories[_parentId].subCategoryIds.push(_subCategoryCounter);
+
+    emit SubCategoryCreated(_subCategoryCounter, _parentId, _name);
+  }
+
+  function createSubCategoriesBulk(
+    uint256 parentId,
+    string[] calldata names
+) external {
+    require(categories[parentId].isActive, "Parent category not active");
+    
+    for (uint i = 0; i < names.length; i++) {
+        _subCategoryCounter++;
+        
+        SubCategory memory newSubCategory = SubCategory({
+            id: _subCategoryCounter,
+            name: names[i],
+            parentCategoryId: parentId,
+            isActive: true
+        });
+        
+        subCategories[_subCategoryCounter] = newSubCategory;
+        categories[parentId].subCategoryIds.push(_subCategoryCounter);
+        
+        emit SubCategoryCreated(_subCategoryCounter, parentId, names[i]);
+    }
+  }
+
+  function updateCategory(uint256 _id, string memory _name, bool _isActive) external onlyOwner {
+    require(categories[_id].id != 0, 'Category does not exist');
+    require(bytes(_name).length > 0, 'Category name cannot be empty');
+
+    categories[_id].name = _name;
+    categories[_id].isActive = _isActive;
+
+    emit CategoryUpdated(_id, _name, _isActive);
+  }
+
+  function updateSubCategory(uint256 _id, string memory _name, bool _isActive) external onlyOwner {
+    require(subCategories[_id].id != 0, 'Subcategory does not exist');
+    require(bytes(_name).length > 0, 'Subcategory name cannot be empty');
+
+    subCategories[_id].name = _name;
+    subCategories[_id].isActive = _isActive;
+
+    emit SubCategoryUpdated(_id, _name, _isActive);
+  }
+
+  function getCategory(
+    uint256 _id
+  )
+    external
+    view
+    returns (uint256 id, string memory name, bool isActive, uint256[] memory subCategoryIds)
+  {
+    Category memory category = categories[_id];
+    require(category.id != 0, 'Category does not exist');
+
+    return (category.id, category.name, category.isActive, category.subCategoryIds);
+  }
+
+  function getSubCategory(
+    uint256 _id
+  )
+    external
+    view
+    returns (uint256 id, string memory name, uint256 parentCategoryId, bool isActive)
+  {
+    SubCategory memory subCategory = subCategories[_id];
+    require(subCategory.id != 0, 'Subcategory does not exist');
+
+    return (subCategory.id, subCategory.name, subCategory.parentCategoryId, subCategory.isActive);
+  }
+
+  function getAllCategories()
+    external
+    view
+    returns (
+      uint256[] memory ids,
+      string[] memory names,
+      bool[] memory activeStates,
+      uint256[][] memory subCategoryIdArrays
+    )
+  {
+    uint256 count = _categoryCounter;
+    ids = new uint256[](count);
+    names = new string[](count);
+    activeStates = new bool[](count);
+    subCategoryIdArrays = new uint256[][](count);
+
+    for (uint256 i = 1; i <= count; i++) {
+      Category memory category = categories[i];
+      if (category.id != 0) {
+        uint256 index = i - 1;
+        ids[index] = category.id;
+        names[index] = category.name;
+        activeStates[index] = category.isActive;
+        subCategoryIdArrays[index] = category.subCategoryIds;
+      }
+    }
+  }
+
+
 
   function createReview(uint256 productId, uint256 rating, string memory comment) external {
     require(products[productId].seller != msg.sender, 'Seller cannot review their own product');

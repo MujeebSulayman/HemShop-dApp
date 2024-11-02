@@ -8,6 +8,7 @@ import {
   ReviewStruct,
   SellerStatus,
   ShippingDetails,
+  SubCategoryStruct,
 } from '@/utils/type.dt'
 
 const toWei = (num: number) => ethers.parseEther(num.toString())
@@ -53,8 +54,8 @@ const createProduct = async (product: ProductParams): Promise<void> => {
       color: product.color,
       size: product.size,
       images: product.images,
-      category: product.category,
-      subCategory: product.subCategory,
+      categoryId: product.categoryId,
+      subCategoryId: product.subCategoryId,
       weight: Number(product.weight),
       model: product.model,
       brand: product.brand,
@@ -83,8 +84,8 @@ const updateProduct = async (product: ProductParams): Promise<void> => {
       color: product.color,
       size: product.size,
       images: product.images,
-      category: product.category,
-      subCategory: product.subCategory,
+      categoryId: product.categoryId,
+      subCategoryId: product.subCategoryId,
       weight: Number(product.weight),
       model: product.model,
       brand: product.brand,
@@ -364,6 +365,172 @@ const structurePurchaseHistory = (
     .sort((a, b) => a.timestamp - b.timestamp)
 }
 
+const createCategory = async (name: string): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.createCategory(name)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const createSubCategory = async (parentId: number, name: string): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.createSubCategory(parentId, name)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getAllCategories = async () => {
+  try {
+    const contract = await getEthereumContract()
+    const data = await contract.getAllCategories()
+    
+    // Destructure the returned data from the contract
+    const [ids, names, activeStates, subCategoryIdArrays] = data
+    
+    // Create a structured array of categories
+    const categories = ids.map((id: any, index: number) => ({
+      id: Number(id),
+      name: names[index],
+      isActive: activeStates[index],
+      subCategoryIds: subCategoryIdArrays[index].map((subId: any) => Number(subId))
+    }))
+    
+    return categories
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const createSubCategoriesBulk = async (parentId: number, names: string[]): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.createSubCategoriesBulk(parentId, names)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const fetchSubCategories = async (): Promise<SubCategoryStruct[]> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    const data = await contract.getAllSubCategories()
+    return data.map((subCategory: any) => ({
+      id: Number(subCategory.id),
+      name: subCategory.name,
+      parentCategoryId: Number(subCategory.parentCategoryId),
+      isActive: subCategory.isActive
+    }))
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+
+const updateCategory = async (id: number, name: string, isActive: boolean): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.updateCategory(id, name, isActive)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const updateSubCategory = async (id: number, name: string, isActive: boolean): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.updateSubCategory(id, name, isActive)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getSubCategory = async (id: number): Promise<SubCategoryStruct> => {
+  try {
+    const contract = await getEthereumContract()
+    const [subId, name, parentId, isActive] = await contract.getSubCategory(id)
+    
+    return {
+      id: Number(subId),
+      name,
+      parentCategoryId: Number(parentId),
+      isActive
+    }
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const deleteCategory = async (id: number): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.updateCategory(id, '', false)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const deleteSubCategory = async (id: number): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.updateSubCategory(id, '', false)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
 export {
   createProduct,
   updateProduct,
@@ -387,4 +554,14 @@ export {
   stopImpersonating,
   changeServicePct,
   buyProduct,
+  createCategory,
+  createSubCategory,
+  getAllCategories,
+  createSubCategoriesBulk,
+  fetchSubCategories,
+  updateCategory,
+  updateSubCategory,
+  getSubCategory,
+  deleteCategory,
+  deleteSubCategory,
 }

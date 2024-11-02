@@ -1,7 +1,12 @@
 import React from 'react'
+import withAdminLayout from '@/components/hoc/withAdminLayout'
 
-const page = () => {
-  return <div>Analysis page</div>
+const AnalyticsPage = () => {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Analytics</h1>
+    </div>
+  )
 }
 
-export default page
+export default withAdminLayout(AnalyticsPage)

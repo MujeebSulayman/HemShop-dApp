@@ -1,5 +1,5 @@
 import React from 'react'
-
+import withAdminLayout from '@/components/hoc/withAdminLayout'
 const AdminSwitchAccountPage = () => {
   return (
     <div>
@@ -29,4 +29,4 @@ const AdminSwitchAccountPage = () => {
   )
 }
 
-export default AdminSwitchAccountPage
+export default withAdminLayout(AdminSwitchAccountPage)

@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import '@rainbow-me/rainbowkit/styles.css'
+import { useRouter } from 'next/router'
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter()
   const [showChild, setShowChild] = useState<boolean>(false)
 
   useEffect(() => {
@@ -36,9 +38,11 @@ export default function App({ Component, pageProps }: AppProps) {
             pauseOnHover
             theme="dark"
           />
-          <footer className="text-center py-20 text-gray-400 text-sm">
-            © 2024 HemShop. All rights reserved.
-          </footer>
+          {!router.pathname.includes('/dashboard') && (
+            <footer className="text-center py-20 text-gray-400 text-sm">
+              © 2024 HemShop. All rights reserved.
+            </footer>
+          )}
         </div>
       </Providers>
     )

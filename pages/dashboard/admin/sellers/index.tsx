@@ -1,7 +1,8 @@
+import withAdminLayout from '@/components/hoc/withAdminLayout'
 import React from 'react'
 
-const page = () => {
+const SellerManagementPage = () => {
   return <div>Seller Management Page</div>
 }
 
-export default page
+export default withAdminLayout(SellerManagementPage)

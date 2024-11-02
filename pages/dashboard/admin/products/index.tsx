@@ -1,12 +1,18 @@
 import React from 'react'
+import withAdminLayout from '@/components/hoc/withAdminLayout'
 
 const AdminProducts = () => {
   return (
-    <div>
-      <h1>Admin Products</h1>
-      {/* Product list and management tools */}
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Products Management</h1>
+      <div className="bg-white rounded-lg shadow p-6">
+        {/* Add your products table or grid here */}
+        <div className="grid gap-4">
+          {/* Product list and management tools */}
+        </div>
+      </div>
     </div>
   )
 }
 
-export default AdminProducts
+export default withAdminLayout(AdminProducts)

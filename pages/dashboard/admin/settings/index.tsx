@@ -1,4 +1,5 @@
 import React from 'react'
+import withAdminLayout from '@/components/hoc/withAdminLayout'
 
 const AdminSettings = () => {
   return (
@@ -8,4 +9,4 @@ const AdminSettings = () => {
   )
 }
 
-export default AdminSettings
+export default withAdminLayout(AdminSettings)

@@ -9,5 +9,10 @@ module.exports = {
     extend: {},
   },
   plugins: [],
+  variants: {
+    extend: {
+      backdropBlur: ['hover', 'focus'],
+    },
+  },
 }
 

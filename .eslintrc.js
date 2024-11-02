@@ -4,9 +4,6 @@ module.exports = {
     node: true,
     browser: true,
   },
-  globals: {
-    REACT_APP_ENV: true,
-  },
   rules: {
     'import/no-anonymous-default-export': 'off',
   },

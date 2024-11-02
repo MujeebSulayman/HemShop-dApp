@@ -39,7 +39,7 @@ const wagmiConfig = createConfig({
 })
 
 const demoAppInfo = {
-  appName: 'HemShop',
+  appName: 'HemProp',
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {

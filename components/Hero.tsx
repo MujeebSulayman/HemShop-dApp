@@ -12,7 +12,7 @@ const Hero = () => {
   ];
 
   return (
-    <div className="relative bg-[#0A0118] min-h-screen">
+    <div className="relative bg-[#0A0118] min-h-screen w-full overflow-hidden">
       {/* Improved background with multiple layers */}
       <div className="absolute inset-0">
         {/* Gradient mesh background */}
@@ -26,7 +26,7 @@ const Hero = () => {
         <div className="absolute inset-0 opacity-[0.15] mix-blend-overlay bg-[url('/noise.png')]" />
       </div>
 
-      <div className="relative container mx-auto px-4 pt-24 md:pt-32">
+      <div className="relative w-full max-w-[100vw] px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 mx-auto">
         <div className="flex flex-col lg:flex-row items-center gap-8 md:gap-16">
           {/* Left content */}
           <motion.div 
@@ -45,7 +45,7 @@ const Hero = () => {
             </motion.div>
             
             {/* Improved mobile-responsive heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-[1.2] tracking-tight">
+            <h1 className="text-5xl sm:text-5xl md:text-5xl lg:text-6xl font-bold text-white mb-4 md:mb-6 leading-[1.2] tracking-tight">
               <span className="block">Discover the New</span>
               <span className="relative inline-block mt-2">
                 <span className="relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-500 to-indigo-400">

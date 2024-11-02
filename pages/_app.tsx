@@ -19,9 +19,11 @@ export default function App({ Component, pageProps }: AppProps) {
   } else {
     return (
       <Providers>
-        <div className="bg-black min-h-screen flex flex-col text-white">
+        <div className="bg-black min-h-screen flex flex-col text-white w-full overflow-x-hidden">
           <Header />
-          <Component {...pageProps} />
+          <main className="flex-1 w-full">
+            <Component {...pageProps} />
+          </main>
           <ToastContainer
             position="bottom-center"
             autoClose={5000}

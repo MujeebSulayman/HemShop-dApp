@@ -7,8 +7,24 @@ import { getAllCategories, getSubCategory } from '@/services/blockchain'
 import { CategoryStruct, SubCategoryStruct } from '@/utils/type.dt'
 import { motion } from 'framer-motion'
 
-import { FiBox, FiImage, FiTag, FiLayers, FiGrid, FiChevronDown, FiX } from 'react-icons/fi'
+import {
+  FiBox,
+  FiImage,
+  FiTag,
+  FiLayers,
+  FiGrid,
+  FiChevronDown,
+  FiX,
+  FiRefreshCw,
+} from 'react-icons/fi'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
+
+const generateSKU = () => {
+  const prefix = 'SKU'
+  const timestamp = Date.now().toString().slice(-4)
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${prefix}-${random}-${timestamp}`
+}
 
 const create = () => {
   const { address } = useAccount()
@@ -18,15 +34,15 @@ const create = () => {
     description: '',
     price: '',
     stock: '',
-    color: '',
-    size: '',
+    colors: [],
+    sizes: [],
     images: [],
     categoryId: 0,
     subCategoryId: 0,
     model: '',
     brand: '',
     weight: '',
-    sku: '',
+    sku: generateSKU(),
     seller: address || '',
   })
 
@@ -37,6 +53,42 @@ const create = () => {
   const [categories, setCategories] = useState<CategoryStruct[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0)
   const [subCategories, setSubCategories] = useState<SubCategoryStruct[]>([])
+
+  const [colorInput, setColorInput] = useState('')
+
+  const handleAddColor = () => {
+    if (!colorInput.trim()) {
+      toast.error('Please enter a color')
+      return
+    }
+
+    if (product.colors.includes(colorInput.trim())) {
+      toast.error('This color is already added')
+      return
+    }
+
+    setProduct((prev) => ({
+      ...prev,
+      colors: [...prev.colors, colorInput.trim()],
+    }))
+    setColorInput('')
+  }
+
+  const handleRemoveColor = (colorToRemove: string) => {
+    setProduct((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((color) => color !== colorToRemove),
+    }))
+  }
+
+  const handleSizeChange = (size: string) => {
+    setProduct((prev) => ({
+      ...prev,
+      sizes: prev.sizes.includes(size)
+        ? prev.sizes.filter((s) => s !== size)
+        : [...prev.sizes, size],
+    }))
+  }
 
   useEffect(() => {
     const fetchCategoriesWithSubcategories = async () => {
@@ -128,14 +180,10 @@ const create = () => {
       'description',
       'price',
       'stock',
-      'color',
-      'size',
       'images',
       'categoryId',
       'subCategoryId',
       'weight',
-      'model',
-      'brand',
       'sku',
     ]
 
@@ -160,10 +208,18 @@ const create = () => {
       return
     }
 
+    const productWithDefaults = {
+      ...product,
+      colors: product.colors || [],
+      sizes: product.sizes || [],
+      model: product.model || '',
+      brand: product.brand || '',
+    }
+
     toast.promise(
       new Promise(async (resolve, reject) => {
         try {
-          const tx = await createProduct(product)
+          const tx = await createProduct(productWithDefaults)
           console.log(tx)
           resetForm()
           resolve(tx)
@@ -215,20 +271,27 @@ const create = () => {
       description: '',
       price: 0,
       stock: 0,
-      color: '',
-      size: '',
+      colors: [],
+      sizes: [],
       images: [],
       categoryId: 0,
       subCategoryId: 0,
       weight: 0,
       model: '',
       brand: '',
-      sku: 0,
+      sku: generateSKU(),
       seller: address || '',
     })
     setImageUrl('')
     setSelectedCategoryId(0)
     setSubCategories([])
+  }
+
+  const handleRegenerateSKU = () => {
+    setProduct((prev) => ({
+      ...prev,
+      sku: generateSKU(),
+    }))
   }
 
   return (
@@ -270,23 +333,30 @@ const create = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1.5">
                   Product Name*
                 </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={product.name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={product.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                      focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                      text-white placeholder-gray-400
+                      transition-all duration-200 ease-in-out
+                      hover:border-gray-500"
+                    placeholder="Enter product name"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
                 <label htmlFor="brand" className="block text-sm font-medium text-gray-300 mb-1">
-                  Brand*
+                  Brand <span className="text-gray-400">(Optional)</span>
                 </label>
                 <input
                   type="text"
@@ -295,14 +365,13 @@ const create = () => {
                   value={product.brand}
                   onChange={handleChange}
                   className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
-                  required
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label
                   htmlFor="description"
-                  className="block text-sm font-medium text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-300 mb-1.5"
                 >
                   Description*
                 </label>
@@ -312,14 +381,20 @@ const create = () => {
                   value={product.description}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                    focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                    text-white placeholder-gray-400
+                    transition-all duration-200 ease-in-out
+                    hover:border-gray-500
+                    resize-none"
+                  placeholder="Enter product description"
                   required
                 />
               </div>
             </div>
           </motion.div>
 
-          {/* Product Details */}
+          {/* Product Details - Simplified */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -334,126 +409,178 @@ const create = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Required Fields */}
               <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="price" className="block text-sm font-medium text-gray-300 mb-1.5">
                   Price (ETH)*
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-400">Ξ</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Ξ</span>
                   <input
                     type="number"
                     id="price"
                     name="price"
+                    min="0.0000001"
+                    step="0.0000001"
                     value={product.price}
                     onChange={handleChange}
-                    className="w-full pl-8 pr-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
+                    className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                      focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                      text-white placeholder-gray-400
+                      transition-all duration-200 ease-in-out
+                      hover:border-gray-500"
+                    placeholder="0.0001"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="stock" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="stock" className="block text-sm font-medium text-gray-300 mb-1.5">
                   Stock*
                 </label>
                 <input
                   type="number"
                   id="stock"
                   name="stock"
+                  min="1"
+                  step="1"
                   value={product.stock}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                    focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                    text-white placeholder-gray-400
+                    transition-all duration-200 ease-in-out
+                    hover:border-gray-500"
+                  placeholder="0"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="sku" className="block text-sm font-medium text-gray-300 mb-1">
-                  SKU*
-                </label>
-                <input
-                  type="number"
-                  id="sku"
-                  name="sku"
-                  value={product.sku}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="color" className="block text-sm font-medium text-gray-300 mb-1">
-                  Color*
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="color"
-                    name="color"
-                    value={product.color}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 
-                      focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
-                    required
-                  />
-                  {product.color && (
-                    <div
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-gray-600"
-                      style={{
-                        backgroundColor: product.color.toLowerCase(),
-                        display: CSS.supports('color', product.color) ? 'block' : 'none',
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="size" className="block text-sm font-medium text-gray-300 mb-1">
-                  Size*
-                </label>
-                <select
-                  id="size"
-                  name="size"
-                  value={product.size}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 
-                    focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white appearance-none"
-                  required
-                >
-                  <option value="" className="bg-gray-900">
-                    Select Size
-                  </option>
-                  {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'].map((size) => (
-                    <option key={size} value={size} className="bg-gray-900">
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                  <FiChevronDown className="w-5 h-5 text-gray-400" />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="weight" className="block text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="weight" className="block text-sm font-medium text-gray-300 mb-1.5">
                   Weight (kg)*
                 </label>
                 <input
                   type="number"
                   id="weight"
                   name="weight"
+                  min="0.01"
+                  step="0.01"
                   value={product.weight}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                    focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                    text-white placeholder-gray-400
+                    transition-all duration-200 ease-in-out
+                    hover:border-gray-500"
+                  placeholder="0.00"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-300 mb-1">
-                  Model*
+                <label htmlFor="sku" className="block text-sm font-medium text-gray-300 mb-1.5">
+                  SKU (Auto-generated)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="sku"
+                    name="sku"
+                    value={product.sku}
+                    readOnly
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-800/30 border border-gray-600
+                      text-white font-mono
+                      cursor-default"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRegenerateSKU}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 
+                      hover:bg-gray-700/50 rounded-lg transition-colors"
+                    title="Generate new SKU"
+                  >
+                    <FiRefreshCw className="w-4 h-4 text-gray-400 hover:text-blue-400" />
+                  </button>
+                </div>
+                <p className="mt-1 text-sm text-gray-400">Unique identifier for your product</p>
+              </div>
+
+              {/* Optional Fields */}
+              <div>
+                <label htmlFor="colors" className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Colors <span className="text-gray-400">(Optional)</span>
+                </label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={colorInput}
+                      onChange={(e) => setColorInput(e.target.value)}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                        focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                        text-white placeholder-gray-400"
+                      placeholder="Enter a color"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddColor}
+                      className="px-4 py-2.5 bg-blue-500/20 text-blue-400 rounded-xl
+                        hover:bg-blue-500/30 transition-colors"
+                    >
+                      Add Color
+                    </button>
+                  </div>
+                  
+                  {product.colors.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {product.colors.map((color) => (
+                        <span
+                          key={color}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-lg
+                            bg-gray-700/50 text-gray-300"
+                        >
+                          {color}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveColor(color)}
+                            className="p-1 hover:text-red-400 transition-colors"
+                          >
+                            <FiX className="w-4 h-4" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="sizes" className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Sizes <span className="text-gray-400">(Optional)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => handleSizeChange(size)}
+                      className={`px-4 py-2 rounded-xl transition-colors ${
+                        product.sizes.includes(size)
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="model" className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Model <span className="text-gray-400">(Optional)</span>
                 </label>
                 <input
                   type="text"
@@ -461,23 +588,12 @@ const create = () => {
                   name="model"
                   value={product.model}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="brand" className="block text-sm font-medium text-gray-300 mb-1">
-                  Brand*
-                </label>
-                <input
-                  type="text"
-                  id="brand"
-                  name="brand"
-                  value={product.brand}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
-                  required
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                    focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                    text-white placeholder-gray-400
+                    transition-all duration-200 ease-in-out
+                    hover:border-gray-500"
+                  placeholder="Enter model"
                 />
               </div>
             </div>
@@ -501,7 +617,7 @@ const create = () => {
               <div>
                 <label
                   htmlFor="categoryId"
-                  className="block text-sm font-medium text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-300 mb-1.5"
                 >
                   Category*
                 </label>
@@ -511,10 +627,11 @@ const create = () => {
                     name="categoryId"
                     value={product.categoryId}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-xl bg-gray-900/50 border border-gray-600 
-                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white 
-                    appearance-none hover:border-indigo-500/50 transition-colors
-                    shadow-[0_4px_10px_rgba(0,0,0,0.1)] backdrop-blur-sm"
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                      focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                      text-white appearance-none
+                      transition-all duration-200 ease-in-out
+                      hover:border-gray-500"
                     required
                   >
                     <option value={0} className="bg-gray-900">
@@ -526,7 +643,7 @@ const create = () => {
                       </option>
                     ))}
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                     <FiChevronDown className="w-5 h-5 text-gray-400" />
                   </div>
                 </div>
@@ -535,7 +652,7 @@ const create = () => {
               <div>
                 <label
                   htmlFor="subCategoryId"
-                  className="block text-sm font-medium text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-300 mb-1.5"
                 >
                   Sub Category*
                 </label>

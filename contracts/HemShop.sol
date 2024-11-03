@@ -42,7 +42,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   event CategoryUpdated(uint256 indexed id, string name, bool isActive);
   event SubCategoryUpdated(uint256 indexed id, string name, bool isActive);
 
-
   struct ReviewStruct {
     uint256 reviewId;
     address reviewer;
@@ -51,15 +50,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     bool deleted;
   }
 
-  struct ProductStruct {
+struct ProductStruct {
     uint256 id;
     address seller;
     string name;
     string description;
     uint256 price;
     uint256 stock;
-    string color;
-    string size;
+    string[] colors;     // Changed from string color
+    string[] sizes;      // Changed from string size
     string[] images;
     string category;
     string subCategory;
@@ -71,7 +70,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     bool wishlist;
     bool deleted;
     ReviewStruct[] reviews;
-  }
+}
+
 
   mapping(uint256 => ProductStruct) public products;
   mapping(address => uint256[]) public sellerProducts;
@@ -152,13 +152,13 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     _;
   }
 
-  struct ProductInput {
+struct ProductInput {
     string name;
     string description;
     uint256 price;
     uint256 stock;
-    string color;
-    string size;
+    string[] colors;     
+    string[] sizes;      
     string[] images;
     uint256 categoryId;
     uint256 subCategoryId;
@@ -166,17 +166,17 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string brand;
     uint256 weight;
     uint256 sku;
-  }
+}
 
   function createProduct(ProductInput calldata input) public onlyVerifiedSellerOrOwner {
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');
-    require(bytes(input.color).length > 0, 'Color cannot be empty');
+    require(input.colors.length > 0, 'Colors cannot be empty');   
+    require(input.sizes.length > 0, 'Sizes cannot be empty');     
     require(input.images.length > 0, 'Images cannot be empty');
     require(input.images.length < 5, 'Images cannot be more than 5');
-    require(bytes(input.size).length > 0, 'Size cannot be empty');
     require(input.categoryId > 0, 'Category cannot be empty');
     require(input.subCategoryId > 0, 'Sub-category cannot be empty');
     require(bytes(input.model).length > 0, 'Model cannot be empty');
@@ -193,8 +193,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     product.description = input.description;
     product.price = input.price;
     product.stock = input.stock;
-    product.color = input.color;
-    product.size = input.size;
+    product.colors = input.colors;    // Updated assignment
+    product.sizes = input.sizes;      // Updated assignment
     product.images = input.images;
     product.category = categories[input.categoryId].name;
     product.subCategory = subCategories[input.subCategoryId].name;
@@ -209,12 +209,9 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     products[newProductId] = product;
     productExists[newProductId] = true;
     sellerProducts[msg.sender].push(newProductId);
-  }
+}
 
-  function updateProduct(
-    uint256 productId,
-    ProductInput calldata input
-  ) external onlyVerifiedSellerOrOwner {
+  function updateProduct(uint256 productId, ProductInput calldata input) external onlyVerifiedSellerOrOwner {
     require(products[productId].seller == msg.sender, 'Only the seller can update their product');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
@@ -222,11 +219,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
+    require(input.stock > 0, 'Stock must be greater than 0');
+    require(input.colors.length > 0, 'Colors cannot be empty');  
+    require(input.sizes.length > 0, 'Sizes cannot be empty');      
     require(input.images.length > 0, 'Images cannot be empty');
     require(input.images.length < 5, 'Images cannot be more than 5');
-    require(input.stock > 0, 'Stock must be greater than 0');
-    require(bytes(input.color).length > 0, 'Color cannot be empty');
-    require(bytes(input.size).length > 0, 'Size cannot be empty');
     require(input.categoryId > 0, 'Category cannot be empty');
     require(input.subCategoryId > 0, 'Sub-category cannot be empty');
     require(bytes(input.model).length > 0, 'Model cannot be empty');
@@ -238,8 +235,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     products[productId].description = input.description;
     products[productId].price = input.price;
     products[productId].stock = input.stock;
-    products[productId].color = input.color;
-    products[productId].size = input.size;
+    products[productId].colors = input.colors;
+    products[productId].sizes = input.sizes;      
     products[productId].images = input.images;
     products[productId].category = categories[input.categoryId].name;
     products[productId].subCategory = subCategories[input.subCategoryId].name;
@@ -247,7 +244,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     products[productId].brand = input.brand;
     products[productId].weight = input.weight;
     products[productId].sku = input.sku;
-  }
+}
 
   function deleteProduct(uint256 productId) external onlyVerifiedSellerOrOwner {
     require(productExists[productId], 'Product does not exist');
@@ -290,26 +287,23 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     emit SubCategoryCreated(_subCategoryCounter, _parentId, _name);
   }
 
-  function createSubCategoriesBulk(
-    uint256 parentId,
-    string[] calldata names
-) external {
-    require(categories[parentId].isActive, "Parent category not active");
-    
+  function createSubCategoriesBulk(uint256 parentId, string[] calldata names) external {
+    require(categories[parentId].isActive, 'Parent category not active');
+
     for (uint i = 0; i < names.length; i++) {
-        _subCategoryCounter++;
-        
-        SubCategory memory newSubCategory = SubCategory({
-            id: _subCategoryCounter,
-            name: names[i],
-            parentCategoryId: parentId,
-            isActive: true
-        });
-        
-        subCategories[_subCategoryCounter] = newSubCategory;
-        categories[parentId].subCategoryIds.push(_subCategoryCounter);
-        
-        emit SubCategoryCreated(_subCategoryCounter, parentId, names[i]);
+      _subCategoryCounter++;
+
+      SubCategory memory newSubCategory = SubCategory({
+        id: _subCategoryCounter,
+        name: names[i],
+        parentCategoryId: parentId,
+        isActive: true
+      });
+
+      subCategories[_subCategoryCounter] = newSubCategory;
+      categories[parentId].subCategoryIds.push(_subCategoryCounter);
+
+      emit SubCategoryCreated(_subCategoryCounter, parentId, names[i]);
     }
   }
 
@@ -386,8 +380,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       }
     }
   }
-
-
 
   function createReview(uint256 productId, uint256 rating, string memory comment) external {
     require(products[productId].seller != msg.sender, 'Seller cannot review their own product');

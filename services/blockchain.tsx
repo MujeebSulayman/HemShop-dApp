@@ -51,8 +51,8 @@ const createProduct = async (product: ProductParams): Promise<void> => {
       description: product.description,
       price: toWei(Number(product.price)),
       stock: Number(product.stock),
-      color: product.color,
-      size: product.size,
+      colors: product.colors,
+      sizes: product.sizes,
       images: product.images,
       categoryId: product.categoryId,
       subCategoryId: product.subCategoryId,
@@ -81,8 +81,8 @@ const updateProduct = async (product: ProductParams): Promise<void> => {
       description: product.description,
       price: toWei(Number(product.price)),
       stock: Number(product.stock),
-      color: product.color,
-      size: product.size,
+      colors: product.colors,
+      sizes: product.sizes,
       images: product.images,
       categoryId: product.categoryId,
       subCategoryId: product.subCategoryId,
@@ -330,8 +330,8 @@ const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
       description: product.description,
       price: parseFloat(fromWei(product.price)),
       stock: Number(product.stock),
-      color: product.color,
-      size: product.size,
+      colors: product.colors,
+      sizes: product.sizes,
       images: product.images,
       category: product.category,
       subCategory: product.subCategory,
@@ -440,23 +440,13 @@ const fetchSubCategories = async (): Promise<SubCategoryStruct[]> => {
   }
   try {
     const contract = await getEthereumContract()
-    const categories = await getAllCategories()
-    const subCategories: SubCategoryStruct[] = []
-
-    for (const category of categories) {
-      for (const subCategoryId of category.subCategoryIds) {
-        const subCategory = await contract.getSubCategory(subCategoryId)
-        if (subCategory.isActive) {
-          subCategories.push({
-            id: Number(subCategory.id),
-            name: subCategory.name,
-            parentCategoryId: Number(subCategory.parentCategoryId),
-            isActive: subCategory.isActive
-          })
-        }
-      }
-    }
-    return subCategories
+    const data = await contract.getSubCategory()
+    return data.map((subCategory: any) => ({
+      id: Number(subCategory.id),
+      name: subCategory.name,
+      parentCategoryId: Number(subCategory.parentCategoryId),
+      isActive: subCategory.isActive,
+    }))
   } catch (error) {
     reportError(error)
     return Promise.reject(error)

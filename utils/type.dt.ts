@@ -5,8 +5,8 @@ export interface ProductParams {
   description: string
   price: string | number
   stock: string | number
-  color: string
-  size: string
+  colors: string[]
+  sizes: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
@@ -23,8 +23,8 @@ export interface ProductStruct {
   description: string
   price: string | number
   stock: string | number
-  color: string
-  size: string
+  colors: string[]
+  sizes: string[]
   images: string[]
   category: string
   subCategory: string
@@ -129,13 +129,13 @@ export interface ProductInput {
   description: string
   price: string | number
   stock: string | number
-  color: string
-  size: string
+  colors: string[]
+  sizes: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
-  model: string
-  brand: string
+  model?: string
+  brand?: string
   weight: string | number
   sku: string | number
   seller: string

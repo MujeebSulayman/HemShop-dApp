@@ -92,7 +92,12 @@ const ProductList = () => {
                   />
                 </button>
                 <button
-                  onClick={() => addToCart(product)}
+                  onClick={() => addToCart({
+                    ...product,
+                    id: product.id.toString(),
+                    price: Number(product.price),
+                    quantity: 1
+                  })}
                   className="absolute bottom-3 right-3 p-2 rounded-full bg-indigo-500/90 
                     backdrop-blur-md hover:bg-indigo-600 transition-colors"
                 >
@@ -137,7 +142,12 @@ const ProductList = () => {
                 <button
                   className="w-full mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 
                   text-white rounded-xl flex items-center justify-center gap-2 transition-colors "
-                  onClick={() => addToCart(product)}
+                  onClick={() => addToCart({
+                    ...product,
+                    id: product.id.toString(),
+                    price: Number(product.price),
+                    quantity: 1
+                  })}
                 >
                   <FiShoppingCart className="w-4 h-4" />
                   Add to Cart

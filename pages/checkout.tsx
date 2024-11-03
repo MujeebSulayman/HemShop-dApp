@@ -87,7 +87,7 @@ const Checkout = () => {
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                       </div>
                       <input
@@ -97,25 +97,32 @@ const Checkout = () => {
                         required
                         value={shippingDetails.fullName}
                         onChange={handleInputChange}
-                        className="mt-2 block w-full rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 py-3 pl-10"
+                        className="block w-full pl-10 pr-4 py-3 rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
                         placeholder="John Doe"
                       />
                     </div>
                   </div>
                   <div className="col-span-2 md:col-span-1">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                       Email
                     </label>
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      required
-                      value={shippingDetails.email}
-                      onChange={handleInputChange}
-                      className="mt-2 block w-full rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 py-3"
-                      placeholder="john@example.com"
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        required
+                        value={shippingDetails.email}
+                        onChange={handleInputChange}
+                        className="block w-full pl-10 pr-4 py-3 rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
+                        placeholder="john@example.com"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -203,7 +210,7 @@ const Checkout = () => {
                   <div key={item.id} className="flex items-center space-x-4">
                     <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg">
                       <img
-                        src={item.image}
+                        src={item.images[0]}
                         alt={item.name}
                         className="h-full w-full object-cover object-center"
                       />

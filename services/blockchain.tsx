@@ -399,18 +399,18 @@ const getAllCategories = async () => {
   try {
     const contract = await getEthereumContract()
     const data = await contract.getAllCategories()
-    
+
     // Destructure the returned data from the contract
     const [ids, names, activeStates, subCategoryIdArrays] = data
-    
+
     // Create a structured array of categories
     const categories = ids.map((id: any, index: number) => ({
       id: Number(id),
       name: names[index],
       isActive: activeStates[index],
-      subCategoryIds: subCategoryIdArrays[index].map((subId: any) => Number(subId))
+      subCategoryIds: subCategoryIdArrays[index].map((subId: any) => Number(subId)),
     }))
-    
+
     return categories
   } catch (error) {
     reportError(error)
@@ -440,19 +440,28 @@ const fetchSubCategories = async (): Promise<SubCategoryStruct[]> => {
   }
   try {
     const contract = await getEthereumContract()
-    const data = await contract.getAllSubCategories()
-    return data.map((subCategory: any) => ({
-      id: Number(subCategory.id),
-      name: subCategory.name,
-      parentCategoryId: Number(subCategory.parentCategoryId),
-      isActive: subCategory.isActive
-    }))
+    const categories = await getAllCategories()
+    const subCategories: SubCategoryStruct[] = []
+
+    for (const category of categories) {
+      for (const subCategoryId of category.subCategoryIds) {
+        const subCategory = await contract.getSubCategory(subCategoryId)
+        if (subCategory.isActive) {
+          subCategories.push({
+            id: Number(subCategory.id),
+            name: subCategory.name,
+            parentCategoryId: Number(subCategory.parentCategoryId),
+            isActive: subCategory.isActive
+          })
+        }
+      }
+    }
+    return subCategories
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
   }
 }
-
 
 const updateCategory = async (id: number, name: string, isActive: boolean): Promise<void> => {
   if (!ethereum) {
@@ -487,13 +496,13 @@ const updateSubCategory = async (id: number, name: string, isActive: boolean): P
 const getSubCategory = async (id: number): Promise<SubCategoryStruct> => {
   try {
     const contract = await getEthereumContract()
-    const [subId, name, parentId, isActive] = await contract.getSubCategory(id)
+    const subCategory = await contract.getSubCategory(id)
     
     return {
-      id: Number(subId),
-      name,
-      parentCategoryId: Number(parentId),
-      isActive
+      id: Number(subCategory.id),
+      name: subCategory.name,
+      parentCategoryId: Number(subCategory.parentCategoryId),
+      isActive: subCategory.isActive
     }
   } catch (error) {
     reportError(error)
@@ -508,7 +517,12 @@ const deleteCategory = async (id: number): Promise<void> => {
   }
   try {
     const contract = await getEthereumContract()
-    tx = await contract.updateCategory(id, '', false)
+    // First check if category exists
+    const category = await contract.getCategory(id)
+    if (!category.isActive) {
+      throw new Error('Category already deleted')
+    }
+    tx = await contract.updateCategory(id, category.name, false)
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -523,7 +537,12 @@ const deleteSubCategory = async (id: number): Promise<void> => {
   }
   try {
     const contract = await getEthereumContract()
-    tx = await contract.updateSubCategory(id, '', false)
+    // First check if subcategory exists
+    const subCategory = await contract.getSubCategory(id)
+    if (!subCategory.isActive) {
+      throw new Error('SubCategory already deleted')
+    }
+    tx = await contract.updateSubCategory(id, subCategory.name, false)
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -564,4 +583,5 @@ export {
   getSubCategory,
   deleteCategory,
   deleteSubCategory,
+
 }

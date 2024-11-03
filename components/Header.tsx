@@ -9,11 +9,13 @@ import { HiOutlineShoppingBag } from 'react-icons/hi'
 import { BiStore } from 'react-icons/bi'
 import { Menu, Transition } from '@headlessui/react'
 import { FiChevronDown, FiUser, FiPackage, FiSettings } from 'react-icons/fi'
+import { useCart } from '@/contexts/CartContext'
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [scrolled, setScrolled] = useState<boolean>(false)
   const { address } = useAccount()
+  const { cartItems, cartCount, removeFromCart } = useCart()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -122,20 +124,76 @@ const Header: React.FC = () => {
             )}
 
             {/* Updated Cart Icon */}
-            <Link href="/cart">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative cursor-pointer group"
+            <Menu as="div" className="relative">
+              <Menu.Button as="div">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative cursor-pointer group"
+                >
+                  <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <HiOutlineShoppingBag className="h-6 w-6 text-white transition-transform group-hover:scale-105" />
+                    {cartCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
+                      >
+                        {cartCount}
+                      </motion.span>
+                    )}
+                  </div>
+                </motion.div>
+              </Menu.Button>
+
+              <Transition
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
               >
-                <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
-                  <HiOutlineShoppingBag className="h-6 w-6 text-white transition-transform group-hover:scale-105" />
-                  <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium">
-                    0
-                  </span>
-                </div>
-              </motion.div>
-            </Link>
+                <Menu.Items className="absolute right-0 mt-2 w-72 origin-top-right rounded-lg bg-black/80 backdrop-blur-md py-1 shadow-lg ring-1 ring-white/10 focus:outline-none">
+                  {cartItems.length > 0 ? (
+                    <div className="px-4 py-2">
+                      {cartItems.map((item) => (
+                        <div key={item.id} className="flex items-center gap-3 py-2 border-b border-white/10">
+                          <img
+                            src={item.images[0] || '/placeholder.png'}
+                            alt={item.name}
+                            className="w-12 h-12 object-cover rounded-lg"
+                          />
+                          <div className="flex-1">
+                            <h3 className="text-sm font-medium text-white">{item.name}</h3>
+                            <p className="text-xs text-gray-400">
+                              {item.quantity} × {item.price} ETH
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <FaTimes className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <Link
+                        href="/cart"
+                        className="mt-4 w-full px-4 py-2 bg-indigo-500 hover:bg-indigo-600 
+                          text-white rounded-lg flex items-center justify-center gap-2 transition-colors"
+                      >
+                        View Cart
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-6 text-center text-gray-400">
+                      Your cart is empty
+                    </div>
+                  )}
+                </Menu.Items>
+              </Transition>
+            </Menu>
             <ConnectBtn networks />
           </div>
 

@@ -8,6 +8,7 @@ import { CategoryStruct, SubCategoryStruct } from '@/utils/type.dt'
 import { motion } from 'framer-motion'
 
 import { FiBox, FiImage, FiTag, FiLayers, FiGrid, FiChevronDown, FiX } from 'react-icons/fi'
+import withAdminLayout from '@/components/hoc/withAdminLayout'
 
 const create = () => {
   const { address } = useAccount()
@@ -708,4 +709,4 @@ const create = () => {
   )
 }
 
-export default create
+export default withAdminLayout(create)

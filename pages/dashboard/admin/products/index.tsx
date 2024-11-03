@@ -96,41 +96,87 @@ const AdminProducts = () => {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Products Management</h1>
-              <p className="text-gray-400 mt-1">Manage your product inventory</p>
+          {/* Enhanced Header with Stats */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+              <h3 className="text-gray-400 text-sm font-medium">Total Products</h3>
+              <p className="text-2xl font-bold text-white mt-2">{products.length}</p>
+              <div className="flex items-center mt-2">
+                <span className="text-green-400 text-sm">+12.5%</span>
+                <span className="text-gray-500 text-sm ml-2">from last month</span>
+              </div>
             </div>
-            <Link
-              href="/dashboard/admin/products/create"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 
-                transition-colors flex items-center gap-2"
-            >
-              <FiPlus className="w-5 h-5" /> Add New Product
-            </Link>
+            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+              <h3 className="text-gray-400 text-sm font-medium">Active Listings</h3>
+              <p className="text-2xl font-bold text-white mt-2">
+                {products.filter(p => p.status === 'active').length}
+              </p>
+              <div className="flex items-center mt-2">
+                <span className="text-green-400 text-sm">+5.2%</span>
+                <span className="text-gray-500 text-sm ml-2">from last month</span>
+              </div>
+            </div>
+            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+              <h3 className="text-gray-400 text-sm font-medium">Low Stock Items</h3>
+              <p className="text-2xl font-bold text-white mt-2">
+                {products.filter(p => p.stock < 10).length}
+              </p>
+              <div className="flex items-center mt-2">
+                <span className="text-red-400 text-sm">-2.3%</span>
+                <span className="text-gray-500 text-sm ml-2">from last month</span>
+              </div>
+            </div>
+            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
+              <h3 className="text-gray-400 text-sm font-medium">Total Value</h3>
+              <p className="text-2xl font-bold text-white mt-2">
+                {products.reduce((acc, p) => acc + Number(p.price), 0).toFixed(2)} ETH
+              </p>
+              <div className="flex items-center mt-2">
+                <span className="text-green-400 text-sm">+8.1%</span>
+                <span className="text-gray-500 text-sm ml-2">from last month</span>
+              </div>
+            </div>
           </div>
 
-          {/* Search and Filter Bar */}
+          {/* Enhanced Action Bar */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Products Management</h1>
+              <p className="text-gray-400 mt-1">Manage your NFT product inventory</p>
+            </div>
+            <div className="flex gap-3">
+              <button className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 
+                transition-colors flex items-center gap-2">
+                <FiFilter className="w-5 h-5" /> Export
+              </button>
+              <Link
+                href="/dashboard/admin/products/create"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 
+                  transition-colors flex items-center gap-2"
+              >
+                <FiPlus className="w-5 h-5" /> Add Product
+              </Link>
+            </div>
+          </div>
+
+          {/* Enhanced Search and Filter Bar */}
           <div className="bg-gray-800/50 rounded-xl shadow-xl p-4 border border-gray-700/50">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div className="relative flex-1 max-w-md">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search products..."
                   className="pl-10 pr-4 py-2 w-full bg-gray-900/50 border border-gray-600 rounded-lg
-                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white 
-                    placeholder-gray-400"
+                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <FiFilter className="text-gray-400" />
+              <div className="flex gap-4">
                 <select
                   className="bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white
-                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent flex-1"
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                 >
@@ -138,6 +184,15 @@ const AdminProducts = () => {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="low-stock">Low Stock</option>
+                </select>
+                <select
+                  className="bg-gray-900/50 border border-gray-600 rounded-lg px-3 py-2 text-white
+                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent flex-1"
+                >
+                  <option>Sort by: Newest</option>
+                  <option>Sort by: Price High</option>
+                  <option>Sort by: Price Low</option>
+                  <option>Sort by: Stock</option>
                 </select>
               </div>
             </div>
@@ -154,23 +209,22 @@ const AdminProducts = () => {
               <p className="text-gray-400">No products found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product) => (
                 <motion.div
                   key={product.id}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="bg-gray-800/50 rounded-xl border border-gray-700/50 overflow-hidden 
-                    hover:border-indigo-500/50 transition-colors group"
+                    hover:border-indigo-500/50 transition-all duration-300 hover:shadow-lg"
                 >
-                  {/* Product Image */}
-                  <div className="aspect-video relative overflow-hidden">
+                  <div className="aspect-square relative overflow-hidden">
                     <img
                       src={product.images[0]}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute top-2 right-2 flex gap-2">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-semibold ${
                           product.status === 'active'
@@ -180,22 +234,32 @@ const AdminProducts = () => {
                       >
                         {product.status}
                       </span>
+                      {product.stock < 10 && (
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold 
+                          bg-yellow-500/20 text-yellow-400">
+                          Low Stock
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Product Info */}
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="text-lg font-semibold text-white">{product.name}</h3>
+                        <h3 className="text-lg font-semibold text-white truncate">{product.name}</h3>
                         <p className="text-gray-400 text-sm">{product.brand}</p>
                       </div>
                       <p className="text-indigo-400 font-semibold">{product.price} ETH</p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-400">
-                        Stock: <span className="text-white">{product.stock}</span>
-                      </span>
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-400">Stock</span>
+                        <span className={`text-sm font-medium ${
+                          product.stock < 10 ? 'text-yellow-400' : 'text-white'
+                        }`}>
+                          {product.stock} units
+                        </span>
+                      </div>
                       <div className="flex gap-2">
                         <Link
                           href={`/dashboard/admin/products/edit/${product.id}`}

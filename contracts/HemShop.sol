@@ -57,8 +57,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string description;
     uint256 price;
     uint256 stock;
-    string[] colors; // Changed from string color
-    string[] sizes; // Changed from string size
+    string[] colors;
+    string[] sizes;
     string[] images;
     string category;
     string subCategory;
@@ -138,7 +138,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   modifier onlyVerifiedSellerOrOwner() {
     address actingAs = adminImpersonating[msg.sender];
     if (msg.sender == owner()) {
-      // Owner can bypass verification check
       _;
       return;
     }

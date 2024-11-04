@@ -71,12 +71,12 @@ export interface SubCategoryStruct {
   isActive: boolean
 }
 
-export interface ReviewStruct {
-  reviewId: number
+export type ReviewStruct = {
+  id: number
   reviewer: string
   rating: number
   comment: string
-  deleted: boolean
+  timestamp: number
 }
 
 export interface ShippingDetails {
@@ -139,4 +139,56 @@ export interface ProductInput {
   brand?: string
   sku: string | number
   seller: string
+}
+
+// Update ProductInput interface to match the form
+export interface ProductInput {
+  name: string
+  description: string
+  price: string | number
+  stock: string | number
+  colors: string[]
+  sizes?: string[]
+  images: string[]
+  categoryId: number
+  subCategoryId: number
+  weight: string | number
+  model?: string
+  brand?: string
+  sku: string | number
+  seller: string
+}
+
+// Update ProductStruct to match
+export interface ProductStruct {
+  id: number
+  seller: string
+  name: string
+  description: string
+  price: string | number
+  stock: string | number
+  colors: string[]
+  sizes?: string[]
+  images: string[]
+  category: string
+  subCategory: string
+  weight: string | number
+  model?: string
+  brand?: string
+  sku: string | number
+  soldout: boolean
+  wishlist: boolean
+  deleted: boolean
+  reviews: ReviewStruct[]
+}
+
+// Update CartItem interface
+export interface CartItem extends Omit<ProductStruct, 'id' | 'price'> {
+  id: string
+  price: number
+  quantity: number
+  selectedSize?: string
+  selectedColor?: string
+  model?: string
+  brand?: string
 }

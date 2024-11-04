@@ -5,8 +5,11 @@ import { FiStar, FiPackage, FiTruck, FiShoppingCart, FiHeart } from 'react-icons
 import { motion } from 'framer-motion'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
 
 const ProductList = () => {
+  const router = useRouter()
   const [products, setProducts] = useState<ProductStruct[]>([])
   const [productReviews, setProductReviews] = useState<{ [key: string]: ReviewStruct[] }>({})
   const [loading, setLoading] = useState(true)
@@ -42,6 +45,24 @@ const ProductList = () => {
     return reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
   }
 
+  const handleProductClick = (productId: string) => {
+    router.push(`/store/${productId}`)
+  }
+
+  const handleAddToCart = (e: React.MouseEvent, product: ProductStruct) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addToCart({
+      ...product,
+      id: product.id.toString(),
+      price: Number(product.price),
+      quantity: 1,
+      brand: product.brand || '',
+      model: product.model || ''
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -55,12 +76,16 @@ const ProductList = () => {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
-            <motion.div
+            <Link
               key={product.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              href={`/store/${product.id}`}
               className="group bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 overflow-hidden 
-                hover:border-indigo-500/50 transition-all duration-300"
+                hover:border-indigo-500/50 transition-all duration-300 cursor-pointer"
+              onClick={(e) => {
+                if (!(e.target as HTMLElement).closest('button')) {
+                  handleProductClick(product.id.toString())
+                }
+              }}
             >
               <div className="aspect-square relative overflow-hidden">
                 <img
@@ -92,12 +117,7 @@ const ProductList = () => {
                   />
                 </button>
                 <button
-                  onClick={() => addToCart({
-                    ...product,
-                    id: product.id.toString(),
-                    price: Number(product.price),
-                    quantity: 1
-                  })}
+                  onClick={(e) => handleAddToCart(e, product)}
                   className="absolute bottom-3 right-3 p-2 rounded-full bg-indigo-500/90 
                     backdrop-blur-md hover:bg-indigo-600 transition-colors"
                 >
@@ -142,29 +162,28 @@ const ProductList = () => {
                 <button
                   className="w-full mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 
                   text-white rounded-xl flex items-center justify-center gap-2 transition-colors "
-                  onClick={() => addToCart({
-                    ...product,
-                    id: product.id.toString(),
-                    price: Number(product.price),
-                    quantity: 1
-                  })}
+                  onClick={(e) => handleAddToCart(e, product)}
                 >
                   <FiShoppingCart className="w-4 h-4" />
                   Add to Cart
                 </button>
               </div>
-            </motion.div>
+            </Link>
           ))}
         </div>
       ) : (
         <div className="space-y-4">
           {products.map((product) => (
-            <motion.div
+            <Link
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              href={`/store/${product.id}`}
               className="bg-white/5 backdrop-blur-lg rounded-2xl border border-white/10 overflow-hidden 
-                hover:border-indigo-500/50 transition-all duration-300"
+                hover:border-indigo-500/50 transition-all duration-300 cursor-pointer"
+              onClick={(e) => {
+                if (!(e.target as HTMLElement).closest('button')) {
+                  handleProductClick(product.id.toString())
+                }
+              }}
             >
               <div className="flex gap-6 p-4">
                 <div className="w-48 h-48 relative rounded-xl overflow-hidden">
@@ -209,16 +228,10 @@ const ProductList = () => {
                     </div>
                   </div>
 
-                  <button
-                    className="w-full mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 
-                    text-white rounded-xl flex items-center justify-center gap-2 transition-colors"
-                  >
-                    <FiShoppingCart className="w-4 h-4" />
-                    Add to Cart
-                  </button>
+                  
                 </div>
               </div>
-            </motion.div>
+            </Link>
           ))}
         </div>
       )}

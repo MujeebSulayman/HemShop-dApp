@@ -46,7 +46,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 theme="dark"
               />
               {!router.pathname.includes('/dashboard') && (
-                <footer className="text-center bg-gradient-to-b mb-20 from-black via-[#111111] to-blackpy-20 text-gray-400 text-sm">
+                <footer className="text-center pb-10 text-gray-400 text-md">
                   © 2024 HemShop. All rights reserved.
                 </footer>
               )}

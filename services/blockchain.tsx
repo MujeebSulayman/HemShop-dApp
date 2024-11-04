@@ -533,11 +533,16 @@ const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
     .sort((a, b) => a.id - b.id)
 }
 
-const structureReview = (review: ReviewStruct[]): ReviewStruct[] => {
-  return review.map((review) => ({
-    ...review,
-    rating: Number(review.rating),
-  }))
+const structureReview = (reviews: ReviewStruct[]): ReviewStruct[] => {
+  return reviews
+    .map((review) => ({
+      id: Number(review.id),
+      reviewer: review.reviewer,
+      rating: Number(review.rating),
+      comment: review.comment,
+      timestamp: Number(review.timestamp)
+    }))
+    .sort((a, b) => b.timestamp - a.timestamp) 
 }
 
 const structurePurchaseHistory = (
@@ -545,8 +550,14 @@ const structurePurchaseHistory = (
 ): PurchaseHistoryStruct[] => {
   return purchaseHistory
     .map((purchase) => ({
-      ...purchase,
+      productId: Number(purchase.productId),
       totalAmount: parseFloat(fromWei(purchase.totalAmount)),
+      basePrice: parseFloat(fromWei(purchase.basePrice)),
+      timestamp: Number(purchase.timestamp),
+      buyer: purchase.buyer,
+      seller: purchase.seller,
+      isDelivered: purchase.isDelivered,
+      shippingDetails: purchase.shippingDetails,
     }))
     .sort((a, b) => a.timestamp - b.timestamp)
 }

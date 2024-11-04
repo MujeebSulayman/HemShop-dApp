@@ -6,13 +6,13 @@ export interface ProductParams {
   price: string | number
   stock: string | number
   colors: string[]
-  sizes: string[]
+  sizes?: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
   weight: string | number
-  model: string
-  brand: string
+  model?: string
+  brand?: string
   sku: string | number
 }
 
@@ -24,13 +24,13 @@ export interface ProductStruct {
   price: string | number
   stock: string | number
   colors: string[]
-  sizes: string[]
+  sizes?: string[]
   images: string[]
   category: string
   subCategory: string
   weight: string | number
-  model: string
-  brand: string
+  model?: string
+  brand?: string
   sku: string | number
   soldout: boolean
   wishlist: boolean
@@ -130,13 +130,13 @@ export interface ProductInput {
   price: string | number
   stock: string | number
   colors: string[]
-  sizes: string[]
+  sizes?: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
+  weight: string | number
   model?: string
   brand?: string
-  weight: string | number
   sku: string | number
   seller: string
 }

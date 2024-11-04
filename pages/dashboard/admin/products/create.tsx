@@ -26,22 +26,22 @@ const generateSKU = () => {
   return `${prefix}-${random}-${timestamp}`
 }
 
-const create = () => {
+const Create = () => {
   const { address } = useAccount()
 
   const [product, setProduct] = useState<ProductInput>({
     name: '',
     description: '',
-    price: '',
-    stock: '',
+    price: 0,
+    stock: 0,
     colors: [],
     sizes: [],
     images: [],
     categoryId: 0,
     subCategoryId: 0,
+    weight: 0,
     model: '',
     brand: '',
-    weight: '',
     sku: generateSKU(),
     seller: address || '',
   })
@@ -62,14 +62,14 @@ const create = () => {
       return
     }
 
-    if (product.colors.includes(colorInput.trim())) {
+    if (product.colors?.includes(colorInput.trim())) {
       toast.error('This color is already added')
       return
     }
 
     setProduct((prev) => ({
       ...prev,
-      colors: [...prev.colors, colorInput.trim()],
+      colors: [...(prev.colors || []), colorInput.trim()],
     }))
     setColorInput('')
   }
@@ -77,16 +77,16 @@ const create = () => {
   const handleRemoveColor = (colorToRemove: string) => {
     setProduct((prev) => ({
       ...prev,
-      colors: prev.colors.filter((color) => color !== colorToRemove),
+      colors: prev.colors?.filter((color) => color !== colorToRemove) || [],
     }))
   }
 
   const handleSizeChange = (size: string) => {
     setProduct((prev) => ({
       ...prev,
-      sizes: prev.sizes.includes(size)
-        ? prev.sizes.filter((s) => s !== size)
-        : [...prev.sizes, size],
+      sizes: prev.sizes?.includes(size)
+        ? prev.sizes?.filter((s) => s !== size) || []
+        : [...(prev.sizes || []), size],
     }))
   }
 
@@ -175,69 +175,36 @@ const create = () => {
       return
     }
 
-    const requiredFields = [
-      'name',
-      'description',
-      'price',
-      'stock',
-      'images',
-      'categoryId',
-      'subCategoryId',
-      'weight',
-      'sku',
-    ]
+    const validationErrors: { [key: string]: string } = {}
+    
+    if (!product.name.trim()) validationErrors.name = 'Name is required'
+    if (!product.description.trim()) validationErrors.description = 'Description is required'
+    if (!product.price || Number(product.price) <= 0) validationErrors.price = 'Valid price is required'
+    if (!product.stock || Number(product.stock) <= 0) validationErrors.stock = 'Valid stock is required'
+    if (!product.images.length) validationErrors.images = 'At least one image is required'
+    if (!product.categoryId) validationErrors.categoryId = 'Category is required'
+    if (!product.subCategoryId) validationErrors.subCategoryId = 'Subcategory is required'
+    if (!product.weight || Number(product.weight) <= 0) validationErrors.weight = 'Valid weight is required'
+    if (!product.colors?.length) validationErrors.colors = 'At least one color is required'
 
-    const missingFields = requiredFields.filter((field) => !product[field as keyof ProductInput])
-    if (missingFields.length > 0) {
-      toast.error(`Please fill in the required fields: ${missingFields.join(', ')}`)
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      const errorFields = Object.keys(validationErrors).join(', ')
+      toast.error(`Please fill in all required fields: ${errorFields}`)
       return
     }
 
-    if (product.images.length === 0) {
-      toast.error('Please upload at least one image')
-      return
+    try {
+      await createProduct({
+        ...product,
+        seller: address,
+      })
+      
+      toast.success('Product created successfully!')
+      resetForm()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create product')
     }
-
-    if (product.categoryId === 0) {
-      toast.error('Please select a category')
-      return
-    }
-
-    if (product.subCategoryId === 0) {
-      toast.error('Please select a sub-category')
-      return
-    }
-
-    const productWithDefaults = {
-      ...product,
-      colors: product.colors || [],
-      sizes: product.sizes || [],
-      model: product.model || '',
-      brand: product.brand || '',
-    }
-
-    toast.promise(
-      new Promise(async (resolve, reject) => {
-        try {
-          const tx = await createProduct(productWithDefaults)
-          console.log(tx)
-          resetForm()
-          resolve(tx)
-        } catch (error) {
-          console.error('Error creating product:', error)
-          reject(error)
-        }
-      }),
-      {
-        pending: 'Creating product...',
-        success: 'Product created successfully!',
-        // error: {
-        //   render({ data }) {
-        //     return `Failed to create product: ${data?.message || 'Unknown error'}`
-        //   }
-        // }
-      }
-    )
   }
 
   const handleImageAdd = () => {
@@ -285,6 +252,7 @@ const create = () => {
     setImageUrl('')
     setSelectedCategoryId(0)
     setSubCategories([])
+    setErrors({})
   }
 
   const handleRegenerateSKU = () => {
@@ -364,7 +332,12 @@ const create = () => {
                   name="brand"
                   value={product.brand}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 rounded-xl bg-gray-700/50 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
+                    focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                    text-white placeholder-gray-400
+                    transition-all duration-200 ease-in-out
+                    hover:border-gray-500"
+                  placeholder="Enter brand name"
                 />
               </div>
 
@@ -465,8 +438,8 @@ const create = () => {
                   type="number"
                   id="weight"
                   name="weight"
-                  min="0.01"
-                  step="0.01"
+                  min="0.0001"
+                  step="0.0001"
                   value={product.weight}
                   onChange={handleChange}
                   className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
@@ -474,9 +447,12 @@ const create = () => {
                     text-white placeholder-gray-400
                     transition-all duration-200 ease-in-out
                     hover:border-gray-500"
-                  placeholder="0.00"
+                  placeholder="0.000"
                   required
                 />
+                <p className="mt-1 text-xs text-gray-400">
+                  Enter weight in kilograms (e.g., 0.5 for 500g)
+                </p>
               </div>
 
               <div>
@@ -507,10 +483,10 @@ const create = () => {
                 <p className="mt-1 text-sm text-gray-400">Unique identifier for your product</p>
               </div>
 
-              {/* Optional Fields */}
+             
               <div>
                 <label htmlFor="colors" className="block text-sm font-medium text-gray-300 mb-1.5">
-                  Colors <span className="text-gray-400">(Optional)</span>
+                  Colors*
                 </label>
                 <div className="space-y-2">
                   <div className="flex gap-2">
@@ -532,8 +508,8 @@ const create = () => {
                       Add Color
                     </button>
                   </div>
-                  
-                  {product.colors.length > 0 && (
+
+                  {product.colors && product.colors.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {product.colors.map((color) => (
                         <span
@@ -567,7 +543,7 @@ const create = () => {
                       type="button"
                       onClick={() => handleSizeChange(size)}
                       className={`px-4 py-2 rounded-xl transition-colors ${
-                        product.sizes.includes(size)
+                        product.sizes && product.sizes.includes(size)
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
                       }`}
@@ -579,7 +555,7 @@ const create = () => {
               </div>
 
               <div>
-                <label htmlFor="model" className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label htmlFor="model" className="block text-sm font-medium text-gray-300 mb-1">
                   Model <span className="text-gray-400">(Optional)</span>
                 </label>
                 <input
@@ -593,7 +569,7 @@ const create = () => {
                     text-white placeholder-gray-400
                     transition-all duration-200 ease-in-out
                     hover:border-gray-500"
-                  placeholder="Enter model"
+                  placeholder="Enter model number/name"
                 />
               </div>
             </div>
@@ -826,4 +802,4 @@ const create = () => {
   )
 }
 
-export default withAdminLayout(create)
+export default withAdminLayout(Create)

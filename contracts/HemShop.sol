@@ -50,15 +50,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     bool deleted;
   }
 
-struct ProductStruct {
+  struct ProductStruct {
     uint256 id;
     address seller;
     string name;
     string description;
     uint256 price;
     uint256 stock;
-    string[] colors;     // Changed from string color
-    string[] sizes;      // Changed from string size
+    string[] colors; // Changed from string color
+    string[] sizes; // Changed from string size
     string[] images;
     string category;
     string subCategory;
@@ -70,8 +70,7 @@ struct ProductStruct {
     bool wishlist;
     bool deleted;
     ReviewStruct[] reviews;
-}
-
+  }
 
   mapping(uint256 => ProductStruct) public products;
   mapping(address => uint256[]) public sellerProducts;
@@ -138,27 +137,33 @@ struct ProductStruct {
 
   modifier onlyVerifiedSellerOrOwner() {
     address actingAs = adminImpersonating[msg.sender];
+    if (msg.sender == owner()) {
+      // Owner can bypass verification check
+      _;
+      return;
+    }
+
     if (actingAs != address(0)) {
       require(
-        sellerStatus[actingAs] == SellerStatus.Verified || owner() == actingAs,
+        sellerStatus[actingAs] == SellerStatus.Verified,
         'Only verified seller or owner allowed'
       );
     } else {
       require(
-        sellerStatus[msg.sender] == SellerStatus.Verified || owner() == msg.sender,
+        sellerStatus[msg.sender] == SellerStatus.Verified,
         'Only verified seller or owner allowed'
       );
     }
     _;
   }
 
-struct ProductInput {
+  struct ProductInput {
     string name;
     string description;
     uint256 price;
     uint256 stock;
-    string[] colors;     
-    string[] sizes;      
+    string[] colors;
+    string[] sizes;
     string[] images;
     uint256 categoryId;
     uint256 subCategoryId;
@@ -166,17 +171,17 @@ struct ProductInput {
     string brand;
     uint256 weight;
     uint256 sku;
-}
+  }
 
   function createProduct(ProductInput calldata input) public onlyVerifiedSellerOrOwner {
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');
-    require(input.colors.length > 0, 'Colors cannot be empty');   
-    require(input.sizes.length > 0, 'Sizes cannot be empty');     
+    require(input.colors.length > 0, 'Colors cannot be empty');
+    require(input.sizes.length > 0, 'Sizes cannot be empty');
     require(input.images.length > 0, 'Images cannot be empty');
-    require(input.images.length < 5, 'Images cannot be more than 5');
+    require(input.images.length <= 5, 'Images cannot be more than 5');
     require(input.categoryId > 0, 'Category cannot be empty');
     require(input.subCategoryId > 0, 'Sub-category cannot be empty');
     require(bytes(input.model).length > 0, 'Model cannot be empty');
@@ -193,8 +198,8 @@ struct ProductInput {
     product.description = input.description;
     product.price = input.price;
     product.stock = input.stock;
-    product.colors = input.colors;    // Updated assignment
-    product.sizes = input.sizes;      // Updated assignment
+    product.colors = input.colors;
+    product.sizes = input.sizes;
     product.images = input.images;
     product.category = categories[input.categoryId].name;
     product.subCategory = subCategories[input.subCategoryId].name;
@@ -209,9 +214,12 @@ struct ProductInput {
     products[newProductId] = product;
     productExists[newProductId] = true;
     sellerProducts[msg.sender].push(newProductId);
-}
+  }
 
-  function updateProduct(uint256 productId, ProductInput calldata input) external onlyVerifiedSellerOrOwner {
+  function updateProduct(
+    uint256 productId,
+    ProductInput calldata input
+  ) external onlyVerifiedSellerOrOwner {
     require(products[productId].seller == msg.sender, 'Only the seller can update their product');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
@@ -220,10 +228,10 @@ struct ProductInput {
     require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');
-    require(input.colors.length > 0, 'Colors cannot be empty');  
-    require(input.sizes.length > 0, 'Sizes cannot be empty');      
+    require(input.colors.length > 0, 'Colors cannot be empty');
+    require(input.sizes.length > 0, 'Sizes cannot be empty');
     require(input.images.length > 0, 'Images cannot be empty');
-    require(input.images.length < 5, 'Images cannot be more than 5');
+    require(input.images.length <= 5, 'Images cannot be more than 5');
     require(input.categoryId > 0, 'Category cannot be empty');
     require(input.subCategoryId > 0, 'Sub-category cannot be empty');
     require(bytes(input.model).length > 0, 'Model cannot be empty');
@@ -236,7 +244,7 @@ struct ProductInput {
     products[productId].price = input.price;
     products[productId].stock = input.stock;
     products[productId].colors = input.colors;
-    products[productId].sizes = input.sizes;      
+    products[productId].sizes = input.sizes;
     products[productId].images = input.images;
     products[productId].category = categories[input.categoryId].name;
     products[productId].subCategory = subCategories[input.subCategoryId].name;
@@ -244,7 +252,7 @@ struct ProductInput {
     products[productId].brand = input.brand;
     products[productId].weight = input.weight;
     products[productId].sku = input.sku;
-}
+  }
 
   function deleteProduct(uint256 productId) external onlyVerifiedSellerOrOwner {
     require(productExists[productId], 'Product does not exist');

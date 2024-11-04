@@ -11,7 +11,13 @@ import {
   SubCategoryStruct,
 } from '@/utils/type.dt'
 
-const toWei = (num: number) => ethers.parseEther(num.toString())
+const toWei = (num: number) => {
+  try {
+    return ethers.parseEther(num.toString())
+  } catch (error) {
+    throw error
+  }
+}
 const fromWei = (num: string | number | null) => {
   if (num === null || num === undefined) {
     return '0'
@@ -46,24 +52,29 @@ const createProduct = async (product: ProductParams): Promise<void> => {
   }
   try {
     const contract = await getEthereumContract()
+
+    const weightInGrams = Math.round(Number(product.weight) * 1000)
+    const numericSku = Date.now()
+
     const productInput = {
       name: product.name,
       description: product.description,
       price: toWei(Number(product.price)),
       stock: Number(product.stock),
       colors: product.colors,
-      sizes: product.sizes,
+      sizes: product.sizes || [],
       images: product.images,
       categoryId: product.categoryId,
       subCategoryId: product.subCategoryId,
-      weight: Number(product.weight),
-      model: product.model,
-      brand: product.brand,
-      sku: Number(product.sku),
+      weight: weightInGrams,
+      model: product.model || '',
+      brand: product.brand || '',
+      sku: numericSku,
     }
+
     tx = await contract.createProduct(productInput)
     await tx.wait()
-  } catch (error) {
+  } catch (error: any) {
     reportError(error)
     return Promise.reject(error)
   }
@@ -82,13 +93,13 @@ const updateProduct = async (product: ProductParams): Promise<void> => {
       price: toWei(Number(product.price)),
       stock: Number(product.stock),
       colors: product.colors,
-      sizes: product.sizes,
+      sizes: product.sizes || [],
       images: product.images,
       categoryId: product.categoryId,
       subCategoryId: product.subCategoryId,
       weight: Number(product.weight),
-      model: product.model,
-      brand: product.brand,
+      model: product.model || '',
+      brand: product.brand || '',
       sku: Number(product.sku),
     }
     tx = await contract.updateProduct(product.id, productInput)
@@ -321,50 +332,6 @@ const changeServicePct = async (newPct: number): Promise<void> => {
   }
 }
 
-const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
-  return products
-    .map((product) => ({
-      id: Number(product.id),
-      seller: product.seller,
-      name: product.name,
-      description: product.description,
-      price: parseFloat(fromWei(product.price)),
-      stock: Number(product.stock),
-      colors: product.colors,
-      sizes: product.sizes,
-      images: product.images,
-      category: product.category,
-      subCategory: product.subCategory,
-      weight: Number(product.weight),
-      model: product.model,
-      brand: product.brand,
-      sku: Number(product.sku),
-      soldout: product.soldout,
-      wishlist: product.wishlist,
-      deleted: product.deleted,
-      reviews: product.reviews,
-    }))
-    .sort((a, b) => a.id - b.id)
-}
-
-const structureReview = (review: ReviewStruct[]): ReviewStruct[] => {
-  return review.map((review) => ({
-    ...review,
-    rating: Number(review.rating),
-  }))
-}
-
-const structurePurchaseHistory = (
-  purchaseHistory: PurchaseHistoryStruct[]
-): PurchaseHistoryStruct[] => {
-  return purchaseHistory
-    .map((purchase) => ({
-      ...purchase,
-      totalAmount: parseFloat(fromWei(purchase.totalAmount)),
-    }))
-    .sort((a, b) => a.timestamp - b.timestamp)
-}
-
 const createCategory = async (name: string): Promise<void> => {
   if (!ethereum) {
     reportError('Please install a wallet provider')
@@ -487,12 +454,12 @@ const getSubCategory = async (id: number): Promise<SubCategoryStruct> => {
   try {
     const contract = await getEthereumContract()
     const subCategory = await contract.getSubCategory(id)
-    
+
     return {
       id: Number(subCategory.id),
       name: subCategory.name,
       parentCategoryId: Number(subCategory.parentCategoryId),
-      isActive: subCategory.isActive
+      isActive: subCategory.isActive,
     }
   } catch (error) {
     reportError(error)
@@ -540,6 +507,50 @@ const deleteSubCategory = async (id: number): Promise<void> => {
   }
 }
 
+const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
+  return products
+    .map((product) => ({
+      id: Number(product.id),
+      seller: product.seller,
+      name: product.name,
+      description: product.description,
+      price: parseFloat(fromWei(product.price)),
+      stock: Number(product.stock),
+      colors: product.colors,
+      sizes: product.sizes || [],
+      images: product.images,
+      category: product.category,
+      subCategory: product.subCategory,
+      weight: Number(product.weight),
+      model: product.model || '',
+      brand: product.brand || '',
+      sku: Number(product.sku),
+      soldout: product.soldout,
+      wishlist: product.wishlist,
+      deleted: product.deleted,
+      reviews: product.reviews,
+    }))
+    .sort((a, b) => a.id - b.id)
+}
+
+const structureReview = (review: ReviewStruct[]): ReviewStruct[] => {
+  return review.map((review) => ({
+    ...review,
+    rating: Number(review.rating),
+  }))
+}
+
+const structurePurchaseHistory = (
+  purchaseHistory: PurchaseHistoryStruct[]
+): PurchaseHistoryStruct[] => {
+  return purchaseHistory
+    .map((purchase) => ({
+      ...purchase,
+      totalAmount: parseFloat(fromWei(purchase.totalAmount)),
+    }))
+    .sort((a, b) => a.timestamp - b.timestamp)
+}
+
 export {
   createProduct,
   updateProduct,
@@ -573,5 +584,4 @@ export {
   getSubCategory,
   deleteCategory,
   deleteSubCategory,
-
 }

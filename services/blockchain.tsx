@@ -9,6 +9,9 @@ import {
   SellerStatus,
   ShippingDetails,
   SubCategoryStruct,
+  SellerProfile,
+  SellerRegistrationParams,
+  CategoryStruct,
 } from '@/utils/type.dt'
 
 const toWei = (num: number) => {
@@ -172,6 +175,12 @@ const buyProduct = async (
   }
   try {
     const contract = await getEthereumContract()
+    if (!shippingDetails.fullName || !shippingDetails.streetAddress || 
+        !shippingDetails.city || !shippingDetails.state || 
+        !shippingDetails.country || !shippingDetails.postalCode || 
+        !shippingDetails.phone || !shippingDetails.email) {
+      throw new Error('All shipping details are required')
+    }
     tx = await contract.buyProduct(productId, shippingDetails, { value: toWei(price) })
     await tx.wait()
   } catch (error) {
@@ -220,21 +229,6 @@ const deleteReview = async (productId: number, reviewId: number): Promise<void> 
   try {
     const contract = await getEthereumContract()
     tx = await contract.deleteReview(productId, reviewId)
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-const RegisterSeller = async (): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.registerSeller()
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -400,19 +394,15 @@ const createSubCategoriesBulk = async (parentId: number, names: string[]): Promi
   }
 }
 
-const fetchSubCategories = async (): Promise<SubCategoryStruct[]> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
+const fetchSubCategories = async (categoryId: number): Promise<SubCategoryStruct[]> => {
   try {
     const contract = await getEthereumContract()
-    const data = await contract.getSubCategory()
-    return data.map((subCategory: any) => ({
+    const subCategories = await contract.getSubCategories(categoryId)
+    return subCategories.map((subCategory: any) => ({
       id: Number(subCategory.id),
       name: subCategory.name,
       parentCategoryId: Number(subCategory.parentCategoryId),
-      isActive: subCategory.isActive,
+      isActive: subCategory.isActive
     }))
   } catch (error) {
     reportError(error)
@@ -453,13 +443,13 @@ const updateSubCategory = async (id: number, name: string, isActive: boolean): P
 const getSubCategory = async (id: number): Promise<SubCategoryStruct> => {
   try {
     const contract = await getEthereumContract()
-    const subCategory = await contract.getSubCategory(id)
-
+    const [subCatId, name, parentCategoryId, isActive] = await contract.getSubCategory(id)
+    
     return {
-      id: Number(subCategory.id),
-      name: subCategory.name,
-      parentCategoryId: Number(subCategory.parentCategoryId),
-      isActive: subCategory.isActive,
+      id: Number(subCatId),
+      name: name,
+      parentCategoryId: Number(parentCategoryId),
+      isActive: isActive,
     }
   } catch (error) {
     reportError(error)
@@ -474,12 +464,7 @@ const deleteCategory = async (id: number): Promise<void> => {
   }
   try {
     const contract = await getEthereumContract()
-    // First check if category exists
-    const category = await contract.getCategory(id)
-    if (!category.isActive) {
-      throw new Error('Category already deleted')
-    }
-    tx = await contract.updateCategory(id, category.name, false)
+    tx = await contract.deleteCategory(id)
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -494,12 +479,7 @@ const deleteSubCategory = async (id: number): Promise<void> => {
   }
   try {
     const contract = await getEthereumContract()
-    // First check if subcategory exists
-    const subCategory = await contract.getSubCategory(id)
-    if (!subCategory.isActive) {
-      throw new Error('SubCategory already deleted')
-    }
-    tx = await contract.updateSubCategory(id, subCategory.name, false)
+    tx = await contract.deleteSubCategory(id)
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -528,7 +508,7 @@ const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
       soldout: product.soldout,
       wishlist: product.wishlist,
       deleted: product.deleted,
-      reviews: product.reviews,
+      reviews: structureReview(product.reviews),
     }))
     .sort((a, b) => a.id - b.id)
 }
@@ -536,10 +516,11 @@ const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
 const structureReview = (reviews: ReviewStruct[]): ReviewStruct[] => {
   return reviews
     .map((review) => ({
-      id: Number(review.id),
+      reviewId: Number(review.reviewId),
       reviewer: review.reviewer,
       rating: Number(review.rating),
       comment: review.comment,
+      deleted: review.deleted,
       timestamp: Number(review.timestamp)
     }))
     .sort((a, b) => b.timestamp - a.timestamp) 
@@ -562,6 +543,84 @@ const structurePurchaseHistory = (
     .sort((a, b) => a.timestamp - b.timestamp)
 }
 
+const getPendingSellers = async (): Promise<string[]> => {
+  try {
+    const contract = await getEthereumContract()
+    const sellers = await contract.getPendingSellers()
+    return sellers
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getSellerStatus = async (seller: string): Promise<SellerStatus> => {
+  try {
+    const contract = await getEthereumContract()
+    const status = await contract.getSellerStatus(seller)
+    return status
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const requestToBecomeVendor = async (params: SellerRegistrationParams): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+  try {
+    const contract = await getEthereumContract()
+    tx = await contract.registerSeller(
+      params.businessName,
+      params.description,
+      params.email,
+      params.phone,
+      params.logo
+    )
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getSellerProfile = async (seller: string): Promise<SellerProfile> => {
+  try {
+    const contract = await getEthereumContract()
+    const profile = await contract.getSellerProfile(seller)
+    return {
+      businessName: profile.businessName,
+      description: profile.description,
+      email: profile.email,
+      phone: profile.phone,
+      logo: profile.logo,
+      registeredAt: Number(profile.registeredAt),
+      termsAccepted: profile.termsAccepted
+    }
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getCategory = async (id: number): Promise<CategoryStruct> => {
+  try {
+    const contract = await getEthereumContract()
+    const category = await contract.categories(id)
+    return {
+      id: Number(category.id),
+      name: category.name,
+      isActive: category.isActive,
+      subCategoryIds: category.subCategoryIds.map((id: any) => Number(id))
+    }
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
 export {
   createProduct,
   updateProduct,
@@ -577,7 +636,6 @@ export {
   getReviews,
   createReview,
   deleteReview,
-  RegisterSeller,
   updateSellerStatus,
   markPurchaseDelivered,
   withdraw,
@@ -595,4 +653,9 @@ export {
   getSubCategory,
   deleteCategory,
   deleteSubCategory,
+  getPendingSellers,
+  getSellerStatus,
+  requestToBecomeVendor,
+  getSellerProfile,
+  getCategory,
 }

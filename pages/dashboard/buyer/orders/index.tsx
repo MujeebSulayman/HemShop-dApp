@@ -1,11 +1,11 @@
 import React from 'react'
 
-const page = () => {
+const index = () => {
   return (
     <div>
-      Orders page
+      <h1>Review</h1>
     </div>
   )
 }
 
-export default page
+export default index

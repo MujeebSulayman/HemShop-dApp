@@ -175,12 +175,27 @@ const buyProduct = async (
   }
   try {
     const contract = await getEthereumContract()
-    if (!shippingDetails.fullName || !shippingDetails.streetAddress || 
-        !shippingDetails.city || !shippingDetails.state || 
-        !shippingDetails.country || !shippingDetails.postalCode || 
-        !shippingDetails.phone || !shippingDetails.email) {
-      throw new Error('All shipping details are required')
+
+    // Log all shipping details
+    console.log('Shipping Details received:', shippingDetails)
+
+    // Check each field individually and log if missing
+    const missingFields = []
+
+    if (!shippingDetails.fullName) missingFields.push('fullName')
+    if (!shippingDetails.streetAddress) missingFields.push('streetAddress')
+    if (!shippingDetails.city) missingFields.push('city')
+    if (!shippingDetails.state) missingFields.push('state')
+    if (!shippingDetails.country) missingFields.push('country')
+    if (!shippingDetails.postalCode) missingFields.push('postalCode')
+    if (!shippingDetails.phone) missingFields.push('phone')
+    if (!shippingDetails.email) missingFields.push('email')
+
+    if (missingFields.length > 0) {
+      console.error('Missing fields:', missingFields)
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`)
     }
+
     tx = await contract.buyProduct(productId, shippingDetails, { value: toWei(price) })
     await tx.wait()
   } catch (error) {
@@ -402,7 +417,7 @@ const fetchSubCategories = async (categoryId: number): Promise<SubCategoryStruct
       id: Number(subCategory.id),
       name: subCategory.name,
       parentCategoryId: Number(subCategory.parentCategoryId),
-      isActive: subCategory.isActive
+      isActive: subCategory.isActive,
     }))
   } catch (error) {
     reportError(error)
@@ -444,7 +459,7 @@ const getSubCategory = async (id: number): Promise<SubCategoryStruct> => {
   try {
     const contract = await getEthereumContract()
     const [subCatId, name, parentCategoryId, isActive] = await contract.getSubCategory(id)
-    
+
     return {
       id: Number(subCatId),
       name: name,
@@ -521,9 +536,9 @@ const structureReview = (reviews: ReviewStruct[]): ReviewStruct[] => {
       rating: Number(review.rating),
       comment: review.comment,
       deleted: review.deleted,
-      timestamp: Number(review.timestamp)
+      timestamp: Number(review.timestamp),
     }))
-    .sort((a, b) => b.timestamp - a.timestamp) 
+    .sort((a, b) => b.timestamp - a.timestamp)
 }
 
 const structurePurchaseHistory = (
@@ -597,7 +612,7 @@ const getSellerProfile = async (seller: string): Promise<SellerProfile> => {
       phone: profile.phone,
       logo: profile.logo,
       registeredAt: Number(profile.registeredAt),
-      termsAccepted: profile.termsAccepted
+      termsAccepted: profile.termsAccepted,
     }
   } catch (error) {
     reportError(error)
@@ -613,11 +628,71 @@ const getCategory = async (id: number): Promise<CategoryStruct> => {
       id: Number(category.id),
       name: category.name,
       isActive: category.isActive,
-      subCategoryIds: category.subCategoryIds.map((id: any) => Number(id))
+      subCategoryIds: category.subCategoryIds.map((id: any) => Number(id)),
     }
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
+  }
+}
+
+const registerAndVerifyContractOwner = async (): Promise<void> => {
+  if (!ethereum) {
+    reportError('Please install a wallet provider')
+    return Promise.reject(new Error('Browser provider not found'))
+  }
+
+  try {
+    const contract = await getEthereumContract()
+    const contractAddress = address.hemShopContract
+
+    // First register the contract as a seller
+    tx = await contract.registerSeller(
+      'Contract Owner Shop', // Business name
+      'Official contract owner shop', // Description
+      'admin@hemshop.com', // Email
+      '0000000000', // Phone
+      '' // Logo
+    )
+    await tx.wait()
+
+    // Then verify the seller status
+    tx = await contract.updateSellerStatus(contractAddress, 2) // 2 is SellerStatus.Verified
+    await tx.wait()
+
+    console.log('Contract owner registered and verified successfully')
+  } catch (error) {
+    console.error('Error:', error)
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getAllSellers = async () => {
+  try {
+    const contract = await getEthereumContract()
+    
+    // Get all registered sellers from the contract's array
+    const registeredSellers = await contract.registeredSellersList()
+    
+    // Get pending sellers
+    const pendingSellers = await contract.getPendingSellers()
+    
+    // Combine all unique seller addresses
+    const uniqueSellers = [...new Set([...registeredSellers, ...pendingSellers])]
+    
+    const sellersData = await Promise.all(
+      uniqueSellers.map(async (address: string) => {
+        const profile = await contract.getSellerProfile(address)
+        const status = await contract.getSellerStatus(address)
+        return { address, profile, status }
+      })
+    )
+
+    return sellersData
+  } catch (error) {
+    console.error('Error fetching sellers:', error)
+    throw error
   }
 }
 
@@ -658,4 +733,6 @@ export {
   requestToBecomeVendor,
   getSellerProfile,
   getCategory,
+  registerAndVerifyContractOwner,
+  getAllSellers,
 }

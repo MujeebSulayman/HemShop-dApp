@@ -868,7 +868,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function payTo(address to, uint256 amount) internal {
     require(to != address(0), 'Invalid address');
-    (bool success, ) = payable(to).call{value: amount}('');
+    (bool success, ) = payable(to).call{ value: amount }('');
     require(success, 'Transfer failed');
   }
 }

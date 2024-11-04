@@ -16,7 +16,7 @@ const Cart = () => {
   const router = useRouter()
 
   const subtotal = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0)
-  const shippingFee = 0.001 // Example shipping fee in ETH
+  const shippingFee = 0.001
   const total = subtotal + shippingFee
 
   const handleQuantityChange = (productId: number, newQuantity: number) => {
@@ -39,7 +39,7 @@ const Cart = () => {
           <div className="text-center">
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Your cart is empty</h2>
             <p className="mt-4 text-lg text-gray-400">
-              Looks like you haven't added any items to your cart yet.
+              Looks like you haven&apos;t added any items to your cart yet.
             </p>
             <Link
               href="/store"

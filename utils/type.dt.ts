@@ -183,12 +183,9 @@ export interface ProductStruct {
 }
 
 // Update CartItem interface
-export interface CartItem extends Omit<ProductStruct, 'id' | 'price'> {
-  id: string
-  price: number
-  quantity: number
-  selectedSize?: string
-  selectedColor?: string
-  model?: string
-  brand?: string
+export interface CartItem extends ProductStruct {
+  quantity: number;
+  
+  selectedColor?: string;
+  selectedSize?: string;
 }

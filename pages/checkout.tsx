@@ -81,7 +81,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col text-white w-full overflow-x-hidden py-32 bg-gradient-to-b from-black via-[#111111] to-black">
+    <div className="min-h-screen flex flex-col text-white w-full overflow-x-hidden mt-[2rem] pb-[100px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="lg:grid lg:grid-cols-12 lg:gap-x-12">
           {/* Shipping Form - Left Side */}
@@ -239,20 +239,7 @@ const Checkout = () => {
                       <h3 className="text-white font-medium">{item.name}</h3>
                       
                       {/* Specifications */}
-                      <div className="mt-1 space-y-1">
-                        {item.selectedColor && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">Selected Color:</span>
-                            <span className="text-xs text-white">{item.selectedColor}</span>
-                          </div>
-                        )}
-                        {item.selectedSize && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400">Selected Size:</span>
-                            <span className="text-xs text-white">{item.selectedSize}</span>
-                          </div>
-                        )}
-                      </div>
+                      
 
                       {/* Quantity and Price */}
                       <div className="flex justify-between items-center mt-2">

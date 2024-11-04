@@ -133,13 +133,13 @@ const Header: React.FC = () => {
                 >
                   <div className="p-2 rounded-full hover:bg-white/10 transition-colors">
                     <HiOutlineShoppingBag className="h-6 w-6 text-white transition-transform group-hover:scale-105" />
-                    {cartCount > 0 && (
+                    {cartItems.length > 0 && (
                       <motion.span
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         className="absolute -top-1 -right-1 bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium"
                       >
-                        {cartCount}
+                        {cartItems.length}
                       </motion.span>
                     )}
                   </div>

@@ -74,8 +74,6 @@ const ProductDetails = () => {
         id: product.id.toString(),
         price: Number(product.price),
         quantity,
-        selectedColor,
-        selectedSize,
       })
       toast.success('Added to cart')
     } catch (error: any) {
@@ -433,10 +431,7 @@ const ProductDetails = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-white">
-                              {review.reviewer ? 
-                                `${review.reviewer.slice(0, 6)}...${review.reviewer.slice(-4)}` : 
-                                'Anonymous'
-                              }
+                              {`${review.reviewer.slice(0, 6)}...${review.reviewer.slice(-4)}`}
                             </span>
                             <span className="text-gray-400">•</span>
                             <div className="flex items-center text-yellow-400">

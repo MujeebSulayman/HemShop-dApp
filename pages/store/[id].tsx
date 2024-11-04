@@ -426,7 +426,7 @@ const ProductDetails = () => {
                 ) : (
                   reviews.map((review) => (
                     <div
-                      key={review.reviewId}
+                      key={review.id}
                       className="bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
                     >
                       <div className="flex items-center justify-between">

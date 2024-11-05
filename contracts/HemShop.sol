@@ -145,6 +145,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   mapping(address => bool) public registeredUsers;
   mapping(address => UserProfile) public userProfiles;
   address[] public usersList;
+  mapping(address => bool) public isSeller;
 
   // Counters
   uint256 private _categoryCounter;
@@ -176,6 +177,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   event DeliveryStatusUpdated(uint256 indexed productId, address indexed buyer, bool isDelivered);
   event AdminImpersonationChanged(address admin, address impersonatedAccount);
   event UserRegistered(address indexed user, string name);
+  event SellerAccessGranted(address indexed seller);
 
   // Constructor
   constructor(uint256 _pct) ERC721('HemShop', 'Hsp') {
@@ -226,9 +228,9 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   modifier onlyOwnerOrVerifiedSeller() {
     require(
-        msg.sender == owner() || 
+      msg.sender == owner() ||
         (registeredSellers[msg.sender] && sellerStatus[msg.sender] == SellerStatus.Verified),
-        "Not authorized"
+      'Not authorized'
     );
     _;
   }
@@ -300,40 +302,19 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return sellerStatus[seller];
   }
 
-  function getPendingSellers() external view returns (address[] memory) {
-    uint256 pendingCount = 0;
-    for (uint256 i = 0; i < registeredSellersList.length; i++) {
-      if (sellerStatus[registeredSellersList[i]] == SellerStatus.Pending) {
-        pendingCount++;
-      }
-    }
-
-    address[] memory pendingSellers = new address[](pendingCount);
-    uint256 currentIndex = 0;
-
-    for (uint256 i = 0; i < registeredSellersList.length; i++) {
-      if (sellerStatus[registeredSellersList[i]] == SellerStatus.Pending) {
-        pendingSellers[currentIndex] = registeredSellersList[i];
-        currentIndex++;
-      }
-    }
-
-    return pendingSellers;
-  }
-
   // Product Management Functions
   function createProduct(ProductInput calldata input) external onlyOwnerOrVerifiedSeller {
-    require(bytes(input.name).length > 0, "Name cannot be empty");
-    require(input.price > 0, "Price must be greater than 0");
-    require(input.stock > 0, "Stock must be greater than 0");
-    require(input.categoryId > 0, "Category ID must be greater than 0");
-    require(input.subCategoryId > 0, "SubCategory ID must be greater than 0");
-    require(input.weight > 0, "Weight must be greater than 0");
-    require(bytes(input.model).length > 0, "Model cannot be empty");
-    require(bytes(input.brand).length > 0, "Brand cannot be empty");
-    require(input.sku > 0, "SKU must be greater than 0");
-    require(input.images.length > 0, "Images cannot be empty");
-    require(input.images.length <= 5, "Images cannot be more than 5");
+    require(bytes(input.name).length > 0, 'Name cannot be empty');
+    require(input.price > 0, 'Price must be greater than 0');
+    require(input.stock > 0, 'Stock must be greater than 0');
+    require(input.categoryId > 0, 'Category ID must be greater than 0');
+    require(input.subCategoryId > 0, 'SubCategory ID must be greater than 0');
+    require(input.weight > 0, 'Weight must be greater than 0');
+    require(bytes(input.model).length > 0, 'Model cannot be empty');
+    require(bytes(input.brand).length > 0, 'Brand cannot be empty');
+    require(input.sku > 0, 'SKU must be greater than 0');
+    require(input.images.length > 0, 'Images cannot be empty');
+    require(input.images.length <= 5, 'Images cannot be more than 5');
 
     _TotalProducts.increment();
 
@@ -718,7 +699,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       products[productId].soldout = true;
     }
 
-    _recordPurchaseWithShipping(
+    _recordPurchase(
       productId,
       msg.sender,
       products[productId].seller,
@@ -743,7 +724,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     );
   }
 
-  function _recordPurchaseWithShipping(
+  function _recordPurchase(
     uint256 productId,
     address buyer,
     address seller,
@@ -764,33 +745,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
     buyerPurchaseHistory[buyer].push(purchase);
     sellerPurchaseHistory[seller].push(purchase);
-
-    sellerBalances[seller] += totalAmount;
-
-    emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
-  }
-
-  function _recordPurchase(
-    uint256 productId,
-    address buyer,
-    address seller,
-    uint256 totalAmount,
-    uint256 basePrice
-  ) internal {
-    PurchaseHistoryStruct memory purchase = PurchaseHistoryStruct({
-      productId: productId,
-      totalAmount: totalAmount,
-      basePrice: basePrice,
-      timestamp: block.timestamp,
-      buyer: buyer,
-      seller: seller,
-      isDelivered: false,
-      shippingDetails: ShippingDetails('', '', '', '', '', '', '', '')
-    });
-
-    buyerPurchaseHistory[buyer].push(purchase);
-    sellerPurchaseHistory[seller].push(purchase);
-
     sellerBalances[seller] += totalAmount;
 
     emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
@@ -940,7 +894,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   )
     external
     view
-    returns (bool isRegistered, UserProfile memory profile, bool isSeller, SellerStatus sellerState)
+    returns (bool isRegistered, UserProfile memory profile, bool isUserSeller, SellerStatus sellerState)
   {
     isRegistered = registeredUsers[user];
 
@@ -950,10 +904,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       profile = UserProfile({ name: '', email: '', avatar: '', registeredAt: 0, isActive: false });
     }
 
-    isSeller = registeredSellers[user];
-    sellerState = isSeller ? sellerStatus[user] : SellerStatus.Unverified;
+    isUserSeller = registeredSellers[user];
+    sellerState = isUserSeller ? sellerStatus[user] : SellerStatus.Unverified;
 
-    return (isRegistered, profile, isSeller, sellerState);
+    return (isRegistered, profile, isUserSeller, sellerState);
   }
 
   function getPendingVerificationUsers() external view returns (address[] memory) {
@@ -1005,5 +959,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       sellerStatus[ownerAddress] = SellerStatus.Verified;
       registeredSellersList.push(ownerAddress);
     }
+  }
+
+  function getAllRegisteredSellers() external view returns (address[] memory) {
+    return registeredSellersList;
+  }
+
+  function grantSellerAccess(address seller) public onlyOwner {
+    require(sellerStatus[seller] == SellerStatus.Verified, 'Seller must be verified');
+    isSeller[seller] = true;
+    emit SellerAccessGranted(seller);
   }
 }

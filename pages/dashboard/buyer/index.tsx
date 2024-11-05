@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { getBuyerPurchaseHistory } from '@/services/blockchain'
-import { PurchaseHistoryStruct } from '@/utils/type.dt'
+import { getBuyerPurchaseHistory, getSellerStatus } from '@/services/blockchain'
+import { PurchaseHistoryStruct, SellerStatus } from '@/utils/type.dt'
 import { formatEther } from 'viem'
 import {
   ShoppingBagIcon,
@@ -11,19 +11,25 @@ import {
 } from '@heroicons/react/24/outline'
 import { Loader2 } from 'lucide-react'
 import withBuyerLayout from '@/components/hoc/withBuyerLayout'
+import { VerifiedIcon, XCircleIcon } from 'lucide-react'
 
 
 const BuyerDashboard = () => {
   const { address } = useAccount()
   const [purchases, setPurchases] = useState<PurchaseHistoryStruct[]>([])
   const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState<SellerStatus>(SellerStatus.Unverified)
 
   useEffect(() => {
     const loadBuyerData = async () => {
       if (!address) return
       try {
-        const purchaseHistory = await getBuyerPurchaseHistory(address)
+        const [purchaseHistory, statusData] = await Promise.all([
+          getBuyerPurchaseHistory(address),
+          getSellerStatus(address)
+        ])
         setPurchases(purchaseHistory)
+        setStatus(statusData)
       } catch (error) {
         console.error('Error loading buyer data:', error)
       } finally {
@@ -50,7 +56,14 @@ const BuyerDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Buyer Dashboard</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-white">Buyer Dashboard</h1>
+            {status === SellerStatus.Verified ? (
+              <VerifiedIcon className="w-6 h-6 text-blue-500" />
+            ) : (
+              <XCircleIcon className="w-6 h-6 text-red-500" />
+            )}
+          </div>
           <div className="mt-2 flex items-center gap-3">
             <span className="text-gray-400">{address}</span>
           </div>

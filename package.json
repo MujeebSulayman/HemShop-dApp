@@ -38,6 +38,7 @@
     "add": "2.0.6",
     "autoprefixer": "10.4.15",
     "card": "2.5.4",
+    "date-fns": "4.1.0",
     "dotenv": "16.4.5",
     "emojtcha-react": "1.0.6",
     "eslint": "8.48.0",

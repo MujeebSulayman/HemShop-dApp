@@ -16,6 +16,7 @@ import {
   UserData,
   SellerData,
 } from '@/utils/type.dt'
+import { useAccount } from 'wagmi'
 
 // Utility functions
 const toWei = (num: number): bigint => {
@@ -39,7 +40,7 @@ let tx: any
 
 if (typeof window !== 'undefined') ethereum = (window as any).ethereum
 
-const getEthereumContract = async () => {
+export const getEthereumContract = async () => {
   const accounts = await ethereum.request({ method: 'eth_accounts' })
 
   if (accounts.length > 0) {
@@ -242,26 +243,6 @@ const deleteReview = async (productId: number, reviewId: number): Promise<void> 
   try {
     const contract = await getEthereumContract()
     tx = await contract.deleteReview(productId, reviewId)
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-const updateSellerStatus = async (seller: string, status: SellerStatus): Promise<void> => {
-  if (!ethereum) throw new Error('No wallet provider found')
-
-  try {
-    const contract = await getEthereumContract()
-    const owner = await contract.owner()
-    
-    // Only owner can update seller status
-    if (owner.toLowerCase() !== ethereum.selectedAddress.toLowerCase()) {
-      throw new Error('Only contract owner can update seller status')
-    }
-
-    tx = await contract.updateSellerStatus(seller, status)
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -554,19 +535,22 @@ const structurePurchaseHistory = (
 const getPendingSellers = async (): Promise<string[]> => {
   try {
     const contract = await getEthereumContract()
-    const sellers = await contract.getPendingSellers()
-    return sellers
+    console.log('Contract instance:', contract)
+    
+    const pendingSellers = await contract.getPendingVerificationUsers()
+    console.log('Raw pending sellers response:', pendingSellers)
+    
+    return pendingSellers
   } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
+    console.error('Error in getPendingSellers:', error)
+    throw error
   }
 }
 
 const getSellerStatus = async (seller: string): Promise<SellerStatus> => {
   try {
     const contract = await getEthereumContract()
-    const status = await contract.getSellerStatus(seller)
-    return status
+    return await contract.getSellerStatus(seller)
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
@@ -673,28 +657,38 @@ const registerAndVerifyContractOwner = async (): Promise<void> => {
   }
 }
 
-const getAllSellers = async (): Promise<SellerData[]> => {
+const ensureOwnerHasSellerAccess = async () => {
   try {
     const contract = await getEthereumContract()
-    const addresses = await contract.getRegisteredSellersList()
+    const owner = await contract.owner()
+    const { address } = useAccount()
+    
+    if (address && address.toLowerCase() === owner.toLowerCase()) {
+      await contract.grantOwnerSellerAccess()
+    }
+  } catch (error) {
+    console.error('Error ensuring owner access:', error)
+  }
+}
+
+const getAllSellers = async (): Promise<SellerData[]> => {
+  try {
+    await ensureOwnerHasSellerAccess()
+    const contract = await getEthereumContract()
+    const addresses = await contract.getAllRegisteredSellers()
     
     const sellersData = await Promise.all(
       addresses.map(async (address: string) => {
-        const profile = await contract.getSellerProfile(address)
-        const status = await contract.getSellerStatus(address)
-        const balance = await contract.getSellerBalance(address)
-        const productIds = await contract.getSellerProducts(address)
-
+        const sellerData = await contract.getSeller(address)
         return {
           address,
-          profile,
-          status,
-          balance: Number(fromWei(balance)),
-          productIds
+          profile: sellerData.profile,
+          status: sellerData.status,
+          balance: parseFloat(fromWei(sellerData.balance)),
+          productIds: sellerData.productIds.map((id: any) => Number(id))
         }
       })
     )
-
     return sellersData
   } catch (error) {
     console.error('Error in getAllSellers:', error)
@@ -753,17 +747,6 @@ const getUser = async (address: string): Promise<UserData> => {
   }
 }
 
-const getPendingVerificationUsers = async (): Promise<string[]> => {
-  try {
-    const contract = await getEthereumContract()
-    const pendingUsers = await contract.getPendingVerificationUsers()
-    return pendingUsers
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
 const registerUser = async (name: string, email: string, avatar: string): Promise<void> => {
   if (!ethereum) {
     reportError('Please install a wallet provider')
@@ -802,6 +785,53 @@ const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
   } catch (error) {
     reportError(error)
     return false
+  }
+}
+
+const updateSellerStatus = async (seller: string, status: SellerStatus): Promise<void> => {
+  if (!ethereum) throw new Error('No wallet provider found')
+
+  try {
+    const contract = await getEthereumContract()
+    const owner = await contract.owner()
+    
+    if (owner.toLowerCase() !== ethereum.selectedAddress.toLowerCase()) {
+      throw new Error('Only contract owner can update seller status')
+    }
+
+    // First update the seller status
+    const statusTx = await contract.updateSellerStatus(seller, status)
+    await statusTx.wait()
+
+    // If verifying the seller, grant them seller access
+    if (status === SellerStatus.Verified) {
+      const grantTx = await contract.grantSellerAccess(seller)
+      await grantTx.wait()
+    }
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const checkSellerVerification = async (address: string): Promise<{
+  isVerified: boolean
+  status: SellerStatus
+}> => {
+  try {
+    const contract = await getEthereumContract()
+    const sellerData = await contract.getSeller(address)
+    
+    return {
+      isVerified: sellerData.status === SellerStatus.Verified,
+      status: sellerData.status
+    }
+  } catch (error) {
+    console.error('Error checking seller verification:', error)
+    return {
+      isVerified: false,
+      status: SellerStatus.Unverified
+    }
   }
 }
 
@@ -846,7 +876,7 @@ export {
   getAllSellers,
   getSeller,
   getUser,
-  getPendingVerificationUsers,
   registerUser,
   isOwnerOrVerifiedSeller,
+  checkSellerVerification,
 }

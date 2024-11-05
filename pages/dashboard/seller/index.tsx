@@ -1,20 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { getMyProducts, getSellerStatus, getSellerBalance, getSellerProfile } from '@/services/blockchain'
+import { getMyProducts, getSellerStatus, getSellerBalance, getSellerProfile, getEthereumContract } from '@/services/blockchain'
 import { ProductStruct, SellerStatus, SellerProfile } from '@/utils/type.dt'
 import { formatEther } from 'viem'
 import { useRouter } from 'next/router'
 import { toast } from 'react-toastify'
 
-import {
-  ShoppingBagIcon,
-  CurrencyDollarIcon,
-  TagIcon,
-  ChartBarIcon,
-  StarIcon,
-} from '@heroicons/react/24/outline'
+
 import { Loader2 } from 'lucide-react'
 import withSellerLayout from '@/components/hoc/withSellerLayout'
+import { VerifiedIcon, XCircleIcon } from 'lucide-react'
 
 const SellerDashboard = () => {
   const { address } = useAccount()
@@ -30,6 +25,15 @@ const SellerDashboard = () => {
       if (!address) return
       
       try {
+        // First, try to grant owner access if this is the admin
+        const contract = await getEthereumContract()
+        const owner = await contract.owner()
+        
+        if (address.toLowerCase() === owner.toLowerCase()) {
+          await contract.grantOwnerSellerAccess()
+        }
+
+        // Now load the data
         const [productsData, balanceData, statusData, profileData] = await Promise.all([
           getMyProducts(),
           getSellerBalance(address),
@@ -85,7 +89,14 @@ const SellerDashboard = () => {
     <div className="p-6">
       {/* Seller Profile Summary */}
       <div className="mb-8 p-6 bg-gray-800 rounded-lg">
-        <h2 className="text-2xl font-bold mb-4">Welcome, {sellerProfile?.businessName}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold mb-4">Welcome, {sellerProfile?.businessName}</h2>
+          {status === SellerStatus.Verified ? (
+            <VerifiedIcon className="w-6 h-6 text-blue-500" />
+          ) : (
+            <XCircleIcon className="w-6 h-6 text-red-500" />
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-gray-700 rounded-lg">
             <h3 className="text-lg font-medium mb-2">Balance</h3>

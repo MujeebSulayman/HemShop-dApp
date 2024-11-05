@@ -31,7 +31,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
         { label: 'Orders', path: '/dashboard/admin/orders', icon: ShoppingCartIcon },
         { label: 'Users', path: '/dashboard/admin/users', icon: UsersIcon },
         { label: 'Sellers', path: '/dashboard/admin/sellers', icon: ShoppingBagIcon },
-        { label: 'Seller Verification', path: '/dashboard/admin/seller-verification', icon: CheckBadgeIcon },
+        
         {
           label: 'Categories',
           path: '/dashboard/admin/categories',

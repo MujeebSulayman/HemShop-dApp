@@ -1,101 +1,79 @@
 import { SellerData, SellerStatus } from '@/utils/type.dt'
-import { Loader2, CheckCircle2, XCircle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 interface SellerCardProps {
   seller: SellerData
-  mode: 'verification' | 'management'
+  mode?: 'management'
   updating: string | null
-  onUpdateStatus: (address: string, status: number) => Promise<void>
+  onUpdateStatus: (address: string, status: SellerStatus) => void
 }
 
-export const SellerCard = ({ seller, mode, updating, onUpdateStatus }: SellerCardProps) => {
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
-
-  const cardContent = (
-    <>
-      {/* Business Info */}
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          {seller.profile.businessName}
-          {seller.profile.logo && (
-            <img src={seller.profile.logo} alt="Logo" className="w-6 h-6 rounded-full" />
-          )}
-        </h3>
-        <p className="text-sm text-gray-400 mt-1">{seller.profile.email}</p>
-      </div>
-
-      {/* Details */}
-      <div className="space-y-2 mb-4">
-        <p className="text-sm text-gray-400">
-          <span className="font-medium text-gray-300">Status:</span>{' '}
-          {SellerStatus[seller.status]}
-        </p>
-        <p className="text-sm text-gray-400">
-          <span className="font-medium text-gray-300">Phone:</span> {seller.profile.phone}
-        </p>
-        <p className="text-sm text-gray-400">
-          <span className="font-medium text-gray-300">Address:</span>{' '}
-          <a
-            href={`https://etherscan.io/address/${seller.address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1"
-          >
-            {truncateAddress(seller.address)}
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </p>
-      </div>
-
-      {/* Actions */}
-      {mode === 'verification' && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onUpdateStatus(seller.address, SellerStatus.Verified)}
-            disabled={updating === seller.address}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {updating === seller.address ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4" />
-            )}
-            Approve
-          </button>
-          <button
-            onClick={() => onUpdateStatus(seller.address, SellerStatus.Suspended)}
-            disabled={updating === seller.address}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {updating === seller.address ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <XCircle className="w-4 h-4" />
-            )}
-            Reject
-          </button>
-        </div>
-      )}
-    </>
-  )
-
-  if (mode === 'management') {
-    return (
-      <Link
-        href={`/dashboard/admin/sellers/${seller.address}`}
-        className="block bg-gray-800/30 hover:bg-gray-800/50 rounded-2xl transition-all duration-300"
-      >
-        {cardContent}
-      </Link>
-    )
+const SellerCard = ({ seller, mode, updating, onUpdateStatus }: SellerCardProps) => {
+  const getStatusBadge = (status: SellerStatus) => {
+    switch (status) {
+      case SellerStatus.Verified:
+        return <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded-full text-sm">Verified</span>
+      case SellerStatus.Pending:
+        return <span className="px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded-full text-sm">Pending</span>
+      case SellerStatus.Suspended:
+        return <span className="px-2 py-1 bg-red-500/10 text-red-400 rounded-full text-sm">Suspended</span>
+      default:
+        return null
+    }
   }
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 relative group">
-      {cardContent}
-    </div>
+    <Link href={`/dashboard/admin/sellers/${seller.address}`}>
+      <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 hover:border-indigo-500/50 transition-colors">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-white">{seller.profile.businessName}</h3>
+            <p className="text-sm text-gray-400">{seller.address}</p>
+          </div>
+          {getStatusBadge(seller.status)}
+        </div>
+        
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Products</span>
+            <span className="text-white">{seller.productIds.length}</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-gray-400">Balance</span>
+            <span className="text-white">{seller.balance} ETH</span>
+          </div>
+
+          {mode === 'management' && seller.status === SellerStatus.Pending && (
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  onUpdateStatus(seller.address, SellerStatus.Verified)
+                }}
+                disabled={!!updating}
+                className="flex-1 px-4 py-2 bg-green-500/10 text-green-400 rounded-lg
+                  hover:bg-green-500/20 transition-colors disabled:opacity-50"
+              >
+                {updating === seller.address ? 'Verifying...' : 'Verify'}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  onUpdateStatus(seller.address, SellerStatus.Suspended)
+                }}
+                disabled={!!updating}
+                className="flex-1 px-4 py-2 bg-red-500/10 text-red-400 rounded-lg
+                  hover:bg-red-500/20 transition-colors disabled:opacity-50"
+              >
+                {updating === seller.address ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
   )
-} 
+}
+
+export default SellerCard 

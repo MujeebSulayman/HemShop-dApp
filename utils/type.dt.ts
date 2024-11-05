@@ -104,7 +104,7 @@ export enum SellerStatus {
   Unverified = 0,
   Pending = 1,
   Verified = 2,
-  Suspended = 3,
+  Suspended = 3
 }
 
 // Add contract event types

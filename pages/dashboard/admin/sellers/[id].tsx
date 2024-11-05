@@ -6,6 +6,7 @@ import { SellerProfile, SellerStatus } from '@/utils/type.dt'
 import { toast } from 'react-toastify'
 import { Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import DashboardSellerCard from '@/components/sellers/DashboardSellerCard'
 
 const SellerDetailsPage = () => {
   const router = useRouter()
@@ -28,7 +29,7 @@ const SellerDetailsPage = () => {
     try {
       const [profile, status] = await Promise.all([
         getSellerProfile(address),
-        getSellerStatus(address)
+        getSellerStatus(address),
       ])
       setSeller({ address, profile, status })
     } catch (error) {
@@ -57,7 +58,6 @@ const SellerDetailsPage = () => {
       setUpdating(false)
     }
   }
-
   const getStatusColor = (status: SellerStatus) => {
     switch (status) {
       case SellerStatus.Verified:
@@ -82,9 +82,7 @@ const SellerDetailsPage = () => {
   if (!seller) {
     return (
       <div className="p-6">
-        <div className="text-center py-12 text-gray-400">
-          Seller not found
-        </div>
+        <div className="text-center py-12 text-gray-400">Seller not found</div>
       </div>
     )
   }
@@ -130,7 +128,11 @@ const SellerDetailsPage = () => {
               </p>
               <div className="text-sm">
                 <span className="text-gray-400">Status:</span>{' '}
-                <span className={`inline-flex px-3 py-1 rounded-full text-xs ${getStatusColor(seller.status)}`}>
+                <span
+                  className={`inline-flex px-3 py-1 rounded-full text-xs ${getStatusColor(
+                    seller.status
+                  )}`}
+                >
                   {seller.status}
                 </span>
               </div>
@@ -164,7 +166,7 @@ const SellerDetailsPage = () => {
                 Verify Seller
               </button>
             )}
-            
+
             {seller.status !== SellerStatus.Pending && (
               <button
                 onClick={() => handleUpdateStatus(SellerStatus.Pending)}
@@ -181,7 +183,7 @@ const SellerDetailsPage = () => {
                 Set as Pending
               </button>
             )}
-            
+
             {seller.status !== SellerStatus.Suspended && (
               <button
                 onClick={() => handleUpdateStatus(SellerStatus.Suspended)}

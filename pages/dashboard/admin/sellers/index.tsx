@@ -1,45 +1,61 @@
-import { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
 import { getAllSellers, updateSellerStatus } from '@/services/blockchain'
 import { SellerData, SellerStatus } from '@/utils/type.dt'
+import { 
+  Loader2, Search, Users, TrendingUp, AlertCircle,
+  ArrowUpRight, Filter, RefreshCcw
+} from 'lucide-react'
 import { toast } from 'react-toastify'
-import { Loader2, Search, Filter } from 'lucide-react'
-import { SellerCard } from '@/components/sellers/SellerCard'
+import DashboardSellerCard from '@/components/sellers/DashboardSellerCard'
+import Link from 'next/link'
 
-const SellerManagementPage = () => {
+const AdminSellers = () => {
   const [sellers, setSellers] = useState<SellerData[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | SellerStatus>('all')
   const [updating, setUpdating] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<SellerStatus | 'all'>('all')
-  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    loadAllSellers()
+    fetchSellers()
   }, [])
 
-  const loadAllSellers = async () => {
+  const fetchSellers = async () => {
     try {
       const data = await getAllSellers()
       setSellers(data)
     } catch (error) {
-      toast.error('Failed to load sellers')
+      console.error('Error fetching sellers:', error)
+      toast.error('Failed to fetch sellers')
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredSellers = sellers.filter(seller => {
-    const matchesSearch = seller.profile.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         seller.profile.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredSellers = sellers.filter((seller) => {
+    const matchesSearch = 
+      seller.profile.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      seller.profile.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      seller.address.toLowerCase().includes(searchQuery.toLowerCase())
+    
     const matchesStatus = statusFilter === 'all' || seller.status === statusFilter
+    
     return matchesSearch && matchesStatus
   })
+
+  const getStatusCounts = () => {
+    return sellers.reduce((acc, seller) => {
+      acc[seller.status] = (acc[seller.status] || 0) + 1
+      return acc
+    }, {} as Record<SellerStatus, number>)
+  }
 
   const handleUpdateStatus = async (address: string, newStatus: SellerStatus) => {
     setUpdating(address)
     try {
       await updateSellerStatus(address, newStatus)
-      await loadAllSellers()
+      await fetchSellers()
       toast.success('Seller status updated successfully')
     } catch (error) {
       toast.error('Failed to update seller status')
@@ -51,67 +67,144 @@ const SellerManagementPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-          <p className="text-gray-400 animate-pulse">Loading sellers...</p>
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto" />
+          <p className="text-gray-400">Loading sellers data...</p>
         </div>
       </div>
     )
   }
 
+  const statusCounts = getStatusCounts()
+
   return (
-    <div className="p-6 space-y-8">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between bg-gray-800/40 p-6 rounded-2xl backdrop-blur-lg">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Seller Management</h1>
-          <p className="text-gray-400 mt-2">Manage and monitor seller accounts</p>
+    <div className="p-6 max-w-[1600px] mx-auto">
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Sellers Management</h1>
+            <p className="text-gray-400">Manage and monitor all sellers on the platform</p>
+          </div>
+          <Link 
+            href="/dashboard/admin/seller-verification"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500 
+              text-white rounded-xl hover:bg-indigo-600 transition-colors"
+          >
+            <Users className="w-4 h-4" />
+            Verify Sellers
+            <ArrowUpRight className="w-4 h-4" />
+          </Link>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 
-              group-focus-within:text-indigo-500 transition-colors" />
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl p-6 
+          border border-green-500/20">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-500/20 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Active Sellers</p>
+              <p className="text-2xl font-bold text-white">
+                {statusCounts[SellerStatus.Verified] || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 rounded-xl p-6 
+          border border-yellow-500/20">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-yellow-500/20 rounded-lg">
+              <Users className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Pending Verification</p>
+              <p className="text-2xl font-bold text-white">
+                {statusCounts[SellerStatus.Pending] || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-red-500/10 to-red-500/5 rounded-xl p-6 
+          border border-red-500/20">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-500/20 rounded-lg">
+              <AlertCircle className="w-6 h-6 text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-400">Suspended</p>
+              <p className="text-2xl font-bold text-white">
+                {statusCounts[SellerStatus.Suspended] || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 mb-8 
+        border border-gray-700/50">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search sellers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-xl
-                text-sm text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
-                transition-all duration-200"
+              placeholder="Search by business name, email, or wallet address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-900/50 rounded-xl border border-gray-700
+                focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white
+                placeholder:text-gray-500"
             />
           </div>
-          <div className="relative group">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4
-              group-focus-within:text-indigo-500 transition-colors" />
+          <div className="flex gap-4">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as SellerStatus | 'all')}
-              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-xl
-                text-sm text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
-                transition-all duration-200 appearance-none cursor-pointer"
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | SellerStatus)}
+              className="px-4 py-2.5 bg-gray-900/50 rounded-xl border border-gray-700
+                focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white
+                appearance-none pr-10 min-w-[160px]"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 1rem center',
+                backgroundSize: '1.5em 1.5em'
+              }}
             >
               <option value="all">All Statuses</option>
-              <option value={SellerStatus.Pending}>Pending</option>
               <option value={SellerStatus.Verified}>Verified</option>
+              <option value={SellerStatus.Pending}>Pending</option>
               <option value={SellerStatus.Suspended}>Suspended</option>
             </select>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {/* Seller Cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredSellers.map((seller) => (
-          <SellerCard
+          <DashboardSellerCard
             key={seller.address}
             seller={seller}
             mode="management"
-            updating={updating}
+            updating={updating === seller.address ? updating : null}
             onUpdateStatus={handleUpdateStatus}
           />
         ))}
+
+        {filteredSellers.length === 0 && (
+          <div className="col-span-full text-center py-12 text-gray-400">
+            No sellers found
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-export default withAdminLayout(SellerManagementPage)
+export default withAdminLayout(AdminSellers)

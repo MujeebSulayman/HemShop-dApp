@@ -1,4 +1,5 @@
 import { SellerData, SellerStatus } from '@/utils/type.dt'
+
 import Link from 'next/link'
 
 interface SellerCardProps {

@@ -4,10 +4,9 @@ import { getAllSellers, updateSellerStatus } from '@/services/blockchain'
 import { SellerData, SellerStatus } from '@/utils/type.dt'
 import { 
   Loader2, Search, Users, TrendingUp, AlertCircle,
-  ArrowUpRight, Filter, RefreshCcw
+  ArrowUpRight
 } from 'lucide-react'
 import { toast } from 'react-toastify'
-import DashboardSellerCard from '@/components/sellers/DashboardSellerCard'
 import Link from 'next/link'
 
 const AdminSellers = () => {
@@ -185,24 +184,7 @@ const AdminSellers = () => {
         </div>
       </div>
 
-      {/* Seller Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredSellers.map((seller) => (
-          <DashboardSellerCard
-            key={seller.address}
-            seller={seller}
-            mode="management"
-            updating={updating === seller.address ? updating : null}
-            onUpdateStatus={handleUpdateStatus}
-          />
-        ))}
-
-        {filteredSellers.length === 0 && (
-          <div className="col-span-full text-center py-12 text-gray-400">
-            No sellers found
-          </div>
-        )}
-      </div>
+      
     </div>
   )
 }

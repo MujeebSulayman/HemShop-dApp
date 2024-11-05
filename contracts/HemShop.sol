@@ -9,14 +9,21 @@ import '@openzeppelin/contracts/utils/Counters.sol';
 contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   using Counters for Counters.Counter;
 
+  // --- State Variables ---
+
   // Counters
   Counters.Counter private _TotalProducts;
   Counters.Counter private _TotalSales;
   Counters.Counter private _TotalReviews;
+  uint256 private _categoryCounter;
+  uint256 private _subCategoryCounter;
 
-  // State Variables
+  // Core settings
   uint256 public servicePct;
+
+  // Lists
   address[] private registeredSellersList;
+  address[] public usersList;
 
   // Enums
   enum SellerStatus {
@@ -128,30 +135,37 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     bool isActive;
   }
 
-  // Mappings
+  // --- Mappings ---
+
+  // User & Seller mappings
+  mapping(address => UserProfile) public userProfiles;
   mapping(address => SellerProfile) public sellerProfiles;
-  mapping(uint256 => Category) private categories;
-  mapping(uint256 => SubCategory) private subCategories;
+  mapping(address => SellerStatus) public sellerStatus;
+  mapping(address => bool) public registeredSellers;
+  mapping(address => bool) public registeredUsers;
+
+  // Product mappings
   mapping(uint256 => ProductStruct) public products;
   mapping(address => uint256[]) public sellerProducts;
+  mapping(uint256 => bool) public productExists;
+
+  // Category mappings
+  mapping(uint256 => Category) private categories;
+  mapping(uint256 => SubCategory) private subCategories;
+
+  // Transaction mappings
   mapping(address => uint256) public sellerBalances;
-  mapping(address => SellerStatus) public sellerStatus;
   mapping(address => PurchaseHistoryStruct[]) public buyerPurchaseHistory;
   mapping(address => PurchaseHistoryStruct[]) public sellerPurchaseHistory;
-  mapping(address => bool) public registeredSellers;
-  mapping(uint256 => bool) public productExists;
+
+  // Review mappings
   mapping(uint256 => bool) public reviewExists;
+
+  // Admin mappings
   mapping(address => address) public adminImpersonating;
-  mapping(address => bool) public registeredUsers;
-  mapping(address => UserProfile) public userProfiles;
-  address[] public usersList;
-  mapping(address => bool) public isSeller;
 
-  // Counters
-  uint256 private _categoryCounter;
-  uint256 private _subCategoryCounter;
+  // --- Events ---
 
-  // Events
   event CategoryCreated(uint256 indexed id, string name);
   event SubCategoryCreated(uint256 indexed id, uint256 indexed parentId, string name);
   event CategoryUpdated(uint256 indexed id, string name, bool isActive);
@@ -177,14 +191,9 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   event DeliveryStatusUpdated(uint256 indexed productId, address indexed buyer, bool isDelivered);
   event AdminImpersonationChanged(address admin, address impersonatedAccount);
   event UserRegistered(address indexed user, string name);
-  event SellerAccessGranted(address indexed seller);
 
-  // Constructor
-  constructor(uint256 _pct) ERC721('HemShop', 'Hsp') {
-    servicePct = _pct;
-  }
+  // --- Modifiers ---
 
-  // Modifiers
   modifier onlyVerifiedSellerOrOwner() {
     // Owner always has access
     if (msg.sender == owner()) {
@@ -207,37 +216,36 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     _;
   }
 
-  modifier onlyVerifiedOrAdmin() {
-    if (msg.sender == owner()) {
-      _;
-      return;
-    }
+  // --- Constructor ---
 
-    address actingAs = adminImpersonating[msg.sender];
-    if (actingAs != address(0)) {
-      _;
-      return;
-    }
-
-    require(
-      sellerStatus[msg.sender] == SellerStatus.Verified,
-      'Only verified seller or admin allowed'
-    );
-    _;
+  constructor(uint256 _pct) ERC721('HemShop', 'Hsp') {
+    servicePct = _pct;
   }
 
-  modifier onlyOwnerOrVerifiedSeller() {
-    require(
-      msg.sender == owner() ||
-        (registeredSellers[msg.sender] && sellerStatus[msg.sender] == SellerStatus.Verified),
-      'Not authorized'
-    );
-    _;
+  // --- User Management ---
+
+  function registerUser(string memory name, string memory email, string memory avatar) external {
+    require(msg.sender != address(0), "Invalid address");
+    require(!registeredUsers[msg.sender], 'User already registered');
+    require(bytes(name).length > 0, 'Name cannot be empty');
+    require(bytes(email).length > 0, 'Email cannot be empty');
+
+    userProfiles[msg.sender] = UserProfile({
+      name: name,
+      email: email,
+      avatar: avatar,
+      registeredAt: block.timestamp,
+      isActive: true
+    });
+
+    registeredUsers[msg.sender] = true;
+    usersList.push(msg.sender);
+
+    emit UserRegistered(msg.sender, name);
   }
 
-  // Main Functions
+  // --- Seller Management ---
 
-  // Seller Management Functions
   function registerSeller(
     string memory businessName,
     string memory description,
@@ -245,11 +253,9 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string memory phone,
     string memory logo
   ) external {
-    // Allow contract owner to register even if already registered
-    if (msg.sender != owner()) {
-      require(!registeredSellers[msg.sender], 'Already registered');
-    }
-
+    require(msg.sender != address(0), "Invalid address");
+    require(registeredUsers[msg.sender], 'Must be a registered user first');
+    require(!registeredSellers[msg.sender], 'Already registered as seller');
     require(bytes(businessName).length > 0, 'Business name required');
     require(bytes(email).length > 0, 'Email required');
     require(bytes(phone).length > 0, 'Phone required');
@@ -265,27 +271,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     });
 
     registeredSellers[msg.sender] = true;
-    // Contract owner is automatically verified
-    sellerStatus[msg.sender] = msg.sender == owner() ? SellerStatus.Verified : SellerStatus.Pending;
+    // Automatically verify seller upon registration
+    sellerStatus[msg.sender] = SellerStatus.Verified;
 
     if (!isSellerInList(msg.sender)) {
       registeredSellersList.push(msg.sender);
     }
 
     emit SellerRegistered(msg.sender, block.timestamp);
-  }
-
-  function updateSellerStatus(address seller, SellerStatus status) external onlyOwner {
-    require(seller != address(0), 'Invalid seller address');
-    require(registeredSellers[seller], 'Seller not registered');
-    require(sellerStatus[seller] != status, 'Status already set');
-
-    if (status == SellerStatus.Verified) {
-      require(sellerStatus[seller] == SellerStatus.Pending, 'Can only verify pending sellers');
-    }
-
-    sellerStatus[seller] = status;
-    emit SellerStatusUpdated(seller, status);
+    emit SellerStatusUpdated(msg.sender, SellerStatus.Verified);
   }
 
   function getSellerProfile(address seller) external view returns (SellerProfile memory) {
@@ -302,8 +296,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return sellerStatus[seller];
   }
 
-  // Product Management Functions
-  function createProduct(ProductInput calldata input) external onlyOwnerOrVerifiedSeller {
+  // --- Product Management ---
+
+  function createProduct(ProductInput calldata input) external {
+    require(registeredUsers[msg.sender], 'Must be a registered user');
+    require(registeredSellers[msg.sender], 'Must be a registered seller');
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');
@@ -343,10 +340,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     sellerProducts[msg.sender].push(newProductId);
   }
 
-  function updateProduct(
-    uint256 productId,
-    ProductInput calldata input
-  ) external onlyOwnerOrVerifiedSeller {
+  function updateProduct(uint256 productId, ProductInput calldata input) external {
     require(products[productId].seller == msg.sender, 'Only the seller can update their product');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
@@ -381,7 +375,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     products[productId].sku = input.sku;
   }
 
-  function deleteProduct(uint256 productId) external onlyVerifiedSellerOrOwner {
+  function deleteProduct(uint256 productId) external {
     require(productExists[productId], 'Product does not exist');
     require(
       products[productId].seller == msg.sender || owner() == msg.sender,
@@ -483,7 +477,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return categoryProducts;
   }
 
-  // Category Management Functions
+  // --- Category Management ---
+
   function createCategory(string memory _name) external onlyOwner {
     require(bytes(_name).length > 0, 'Category name cannot be empty');
 
@@ -609,7 +604,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     }
   }
 
-  // Review Management Functions
+  // --- Review Management ---
+
   function createReview(uint256 productId, uint256 rating, string memory comment) external {
     require(products[productId].seller != msg.sender, 'Seller cannot review their own product');
     require(rating > 0 && rating <= 5, 'Rating must be between 1 and 5');
@@ -666,17 +662,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return reviews;
   }
 
-  // Purchase Management Functions
+  // --- Purchase Management ---
+
   function buyProduct(
     uint256 productId,
     ShippingDetails calldata shippingDetails
   ) external payable nonReentrant {
+    require(registeredUsers[msg.sender], 'Must be a registered user');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
-    require(
-      sellerStatus[products[productId].seller] == SellerStatus.Verified,
-      'Seller is not verified'
-    );
     require(products[productId].stock > 0, 'Product is out of stock');
     require(products[productId].soldout == false, 'Product is already soldout');
     require(products[productId].seller != msg.sender, 'Cannot buy your own product');
@@ -750,7 +744,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
   }
 
-  function withdraw() external onlyVerifiedSellerOrOwner {
+  function withdraw() external nonReentrant {
+    require(registeredSellers[msg.sender], 'Must be a registered seller');
     uint256 balance = sellerBalances[msg.sender];
     require(balance > 0, 'No balance to withdraw');
 
@@ -758,13 +753,13 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 serviceFee = (balance * servicePct) / 100;
     uint256 sellerAmount = balance - serviceFee;
 
-    // Reset balance before transfer
+    // Clear balance first
     sellerBalances[msg.sender] = 0;
+    emit BalanceUpdated(msg.sender, 0);
 
+    // Then perform transfers
     payTo(owner(), serviceFee);
     payTo(msg.sender, sellerAmount);
-
-    emit BalanceUpdated(msg.sender, 0);
   }
 
   function getSellerBalance(address seller) external view returns (uint256) {
@@ -834,7 +829,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     emit SubCategoryUpdated(_id, subCategories[_id].name, false);
   }
 
-  // Admin Functions
+  // --- Admin Functions ---
+
   function impersonateAccount(address account) external onlyOwner {
     require(account != address(0), 'Invalid account address');
     adminImpersonating[msg.sender] = account;
@@ -857,7 +853,8 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(success, 'Transfer failed');
   }
 
-  // Helper function to check if seller is in the list
+  // --- Helper Functions ---
+
   function isSellerInList(address seller) internal view returns (bool) {
     for (uint i = 0; i < registeredSellersList.length; i++) {
       if (registeredSellersList[i] == seller) {
@@ -885,89 +882,26 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     status = sellerStatus[seller];
     balance = sellerBalances[seller];
     productIds = sellerProducts[seller];
-
+  
     return (profile, status, balance, productIds);
   }
 
-  function getUser(
-    address user
-  )
-    external
-    view
-    returns (bool isRegistered, UserProfile memory profile, bool isUserSeller, SellerStatus sellerState)
+  function getUser(address user) external view returns (
+      bool isRegistered,
+      UserProfile memory profile,
+      bool isUserSeller,
+      SellerStatus sellerState
+    )
   {
     isRegistered = registeredUsers[user];
-
-    if (isRegistered) {
-      profile = userProfiles[user];
-    } else {
-      profile = UserProfile({ name: '', email: '', avatar: '', registeredAt: 0, isActive: false });
-    }
-
+    profile = userProfiles[user];
     isUserSeller = registeredSellers[user];
     sellerState = isUserSeller ? sellerStatus[user] : SellerStatus.Unverified;
 
     return (isRegistered, profile, isUserSeller, sellerState);
   }
 
-  function getPendingVerificationUsers() external view returns (address[] memory) {
-    uint256 count = 0;
-    for (uint256 i = 0; i < usersList.length; i++) {
-      address user = usersList[i];
-      if (registeredUsers[user] && !registeredSellers[user]) {
-        count++;
-      }
-    }
-
-    address[] memory pendingUsers = new address[](count);
-    uint256 index = 0;
-
-    for (uint256 i = 0; i < usersList.length; i++) {
-      address user = usersList[i];
-      if (registeredUsers[user] && !registeredSellers[user]) {
-        pendingUsers[index] = user;
-        index++;
-      }
-    }
-
-    return pendingUsers;
-  }
-
-  function registerUser(string memory name, string memory email, string memory avatar) external {
-    require(!registeredUsers[msg.sender], 'User already registered');
-    require(bytes(name).length > 0, 'Name cannot be empty');
-    require(bytes(email).length > 0, 'Email cannot be empty');
-
-    userProfiles[msg.sender] = UserProfile({
-      name: name,
-      email: email,
-      avatar: avatar,
-      registeredAt: block.timestamp,
-      isActive: true
-    });
-
-    registeredUsers[msg.sender] = true;
-    usersList.push(msg.sender);
-
-    emit UserRegistered(msg.sender, name);
-  }
-
-  function grantOwnerSellerAccess() external onlyOwner {
-    address ownerAddress = owner();
-    if (!registeredSellers[ownerAddress]) {
-      registeredSellers[ownerAddress] = true;
-      sellerStatus[ownerAddress] = SellerStatus.Verified;
-      registeredSellersList.push(ownerAddress);
-    }
-  }
-
   function getAllRegisteredSellers() external view returns (address[] memory) {
     return registeredSellersList;
-  }
-
-  function grantSellerAccess(address seller) public onlyOwner {
-    require(sellerStatus[seller] == SellerStatus.Verified, 'Seller must be verified');
-    isSeller[seller] = true;
-    emit SellerAccessGranted(seller);
   }
 }

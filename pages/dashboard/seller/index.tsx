@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useAccount } from 'wagmi'
-import { getMyProducts, getSellerStatus, getSellerBalance } from '@/services/blockchain'
-import { ProductStruct, SellerStatus } from '@/utils/type.dt'
+import { getMyProducts, getSellerStatus, getSellerBalance, getSellerProfile } from '@/services/blockchain'
+import { ProductStruct, SellerStatus, SellerProfile } from '@/utils/type.dt'
 import { formatEther } from 'viem'
+import { useRouter } from 'next/router'
+import { toast } from 'react-toastify'
 
 import {
   ShoppingBagIcon,
@@ -16,32 +18,47 @@ import withSellerLayout from '@/components/hoc/withSellerLayout'
 
 const SellerDashboard = () => {
   const { address } = useAccount()
+  const router = useRouter()
   const [products, setProducts] = useState<ProductStruct[]>([])
   const [balance, setBalance] = useState<string>('0')
   const [status, setStatus] = useState<SellerStatus>(SellerStatus.Unverified)
+  const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadSellerData = async () => {
       if (!address) return
+      
       try {
-        const [productsData, balanceData, statusData] = await Promise.all([
+        const [productsData, balanceData, statusData, profileData] = await Promise.all([
           getMyProducts(),
           getSellerBalance(address),
           getSellerStatus(address),
+          getSellerProfile(address)
         ])
+
+        // If not verified, redirect back to buyer dashboard
+        if (statusData !== SellerStatus.Verified) {
+          toast.error('You must be a verified vendor to access this page')
+          router.push('/dashboard/buyer')
+          return
+        }
+
         setProducts(productsData)
         setBalance(formatEther(BigInt(balanceData)))
         setStatus(statusData)
+        setSellerProfile(profileData)
       } catch (error) {
         console.error('Error loading seller data:', error)
+        toast.error('Failed to load seller data')
+        router.push('/dashboard/buyer')
       } finally {
         setLoading(false)
       }
     }
 
     loadSellerData()
-  }, [address])
+  }, [address, router])
 
   const getStatusColor = (status: SellerStatus) => {
     switch (status) {
@@ -59,81 +76,35 @@ const SellerDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white">Seller Dashboard</h1>
-          <div className="mt-2 flex items-center gap-3">
-            <span
-              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status)}`}
-            >
-              {SellerStatus[status]}
-            </span>
-            <span className="text-gray-400">•</span>
-            <span className="text-gray-400">{address}</span>
+    <div className="p-6">
+      {/* Seller Profile Summary */}
+      <div className="mb-8 p-6 bg-gray-800 rounded-lg">
+        <h2 className="text-2xl font-bold mb-4">Welcome, {sellerProfile?.businessName}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-700 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">Balance</h3>
+            <p className="text-2xl font-bold">{balance} ETH</p>
           </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/10 rounded-lg">
-                <ShoppingBagIcon className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Total Products</p>
-                <p className="text-2xl font-bold text-white">{products.length}</p>
-              </div>
-            </div>
+          <div className="p-4 bg-gray-700 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">Products</h3>
+            <p className="text-2xl font-bold">{products.length}</p>
           </div>
-
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-500/10 rounded-lg">
-                <CurrencyDollarIcon className="w-6 h-6 text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Available Balance</p>
-                <p className="text-2xl font-bold text-white">{balance} ETH</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-500/10 rounded-lg">
-                <TagIcon className="w-6 h-6 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Active Listings</p>
-                <p className="text-2xl font-bold text-white">
-                  {products.filter((p) => !p.soldout && !p.deleted).length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-500/10 rounded-lg">
-                <ChartBarIcon className="w-6 h-6 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Total Sales</p>
-                <p className="text-2xl font-bold text-white">0</p>
-              </div>
-            </div>
+          <div className="p-4 bg-gray-700 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">Status</h3>
+            <p className={`text-lg font-medium ${getStatusColor(status)}`}>
+              {status}
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Rest of your dashboard content */}
     </div>
   )
 }

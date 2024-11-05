@@ -114,10 +114,18 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string[] images;
     uint256 categoryId;
     uint256 subCategoryId;
+    uint256 weight;
     string model;
     string brand;
-    uint256 weight;
     uint256 sku;
+  }
+
+  struct UserProfile {
+    string name;
+    string email;
+    string avatar;
+    uint256 registeredAt;
+    bool isActive;
   }
 
   // Mappings
@@ -134,6 +142,9 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   mapping(uint256 => bool) public productExists;
   mapping(uint256 => bool) public reviewExists;
   mapping(address => address) public adminImpersonating;
+  mapping(address => bool) public registeredUsers;
+  mapping(address => UserProfile) public userProfiles;
+  address[] public usersList;
 
   // Counters
   uint256 private _categoryCounter;
@@ -164,6 +175,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   );
   event DeliveryStatusUpdated(uint256 indexed productId, address indexed buyer, bool isDelivered);
   event AdminImpersonationChanged(address admin, address impersonatedAccount);
+  event UserRegistered(address indexed user, string name);
 
   // Constructor
   constructor(uint256 _pct) ERC721('HemShop', 'Hsp') {
@@ -172,6 +184,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   // Modifiers
   modifier onlyVerifiedSellerOrOwner() {
+    // Owner always has access
     if (msg.sender == owner()) {
       _;
       return;
@@ -180,7 +193,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     address actingAs = adminImpersonating[msg.sender];
     if (actingAs != address(0)) {
       require(
-        sellerStatus[actingAs] == SellerStatus.Verified || msg.sender == owner(),
+        sellerStatus[actingAs] == SellerStatus.Verified || actingAs == owner(),
         'Only verified seller or owner allowed'
       );
     } else {
@@ -211,6 +224,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     _;
   }
 
+  modifier onlyOwnerOrVerifiedSeller() {
+    require(
+        msg.sender == owner() || 
+        (registeredSellers[msg.sender] && sellerStatus[msg.sender] == SellerStatus.Verified),
+        "Not authorized"
+    );
+    _;
+  }
+
   // Main Functions
 
   // Seller Management Functions
@@ -221,7 +243,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string memory phone,
     string memory logo
   ) external {
-    require(!registeredSellers[msg.sender], 'Already registered');
+    // Allow contract owner to register even if already registered
+    if (msg.sender != owner()) {
+      require(!registeredSellers[msg.sender], 'Already registered');
+    }
+
     require(bytes(businessName).length > 0, 'Business name required');
     require(bytes(email).length > 0, 'Email required');
     require(bytes(phone).length > 0, 'Phone required');
@@ -237,8 +263,12 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     });
 
     registeredSellers[msg.sender] = true;
-    sellerStatus[msg.sender] = SellerStatus.Pending;
-    registeredSellersList.push(msg.sender);
+    // Contract owner is automatically verified
+    sellerStatus[msg.sender] = msg.sender == owner() ? SellerStatus.Verified : SellerStatus.Pending;
+
+    if (!isSellerInList(msg.sender)) {
+      registeredSellersList.push(msg.sender);
+    }
 
     emit SellerRegistered(msg.sender, block.timestamp);
   }
@@ -263,6 +293,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function getSellerStatus(address seller) external view returns (SellerStatus) {
     require(seller != address(0), 'Invalid seller address');
+    // Contract owner is always considered verified
+    if (seller == owner()) {
+      return SellerStatus.Verified;
+    }
     return sellerStatus[seller];
   }
 
@@ -288,21 +322,18 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   }
 
   // Product Management Functions
-  function createProduct(ProductInput calldata input) public onlyVerifiedOrAdmin {
-    require(bytes(input.name).length > 0, 'Name cannot be empty');
-    require(bytes(input.description).length > 0, 'Description cannot be empty');
-    require(input.price > 0, 'Price must be greater than 0');
-    require(input.stock > 0, 'Stock must be greater than 0');
-    require(input.colors.length > 0, 'Colors cannot be empty');
-    require(input.sizes.length > 0, 'Sizes cannot be empty');
-    require(input.images.length > 0, 'Images cannot be empty');
-    require(input.images.length <= 5, 'Images cannot be more than 5');
-    require(input.categoryId > 0, 'Category cannot be empty');
-    require(input.subCategoryId > 0, 'Sub-category cannot be empty');
-    require(bytes(input.model).length > 0, 'Model cannot be empty');
-    require(bytes(input.brand).length > 0, 'Brand cannot be empty');
-    require(input.weight > 0, 'Weight must be greater than 0');
-    require(input.sku > 0, 'SKU must be greater than 0');
+  function createProduct(ProductInput calldata input) external onlyOwnerOrVerifiedSeller {
+    require(bytes(input.name).length > 0, "Name cannot be empty");
+    require(input.price > 0, "Price must be greater than 0");
+    require(input.stock > 0, "Stock must be greater than 0");
+    require(input.categoryId > 0, "Category ID must be greater than 0");
+    require(input.subCategoryId > 0, "SubCategory ID must be greater than 0");
+    require(input.weight > 0, "Weight must be greater than 0");
+    require(bytes(input.model).length > 0, "Model cannot be empty");
+    require(bytes(input.brand).length > 0, "Brand cannot be empty");
+    require(input.sku > 0, "SKU must be greater than 0");
+    require(input.images.length > 0, "Images cannot be empty");
+    require(input.images.length <= 5, "Images cannot be more than 5");
 
     _TotalProducts.increment();
 
@@ -334,7 +365,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   function updateProduct(
     uint256 productId,
     ProductInput calldata input
-  ) external onlyVerifiedSellerOrOwner {
+  ) external onlyOwnerOrVerifiedSeller {
     require(products[productId].seller == msg.sender, 'Only the seller can update their product');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
@@ -870,5 +901,109 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(to != address(0), 'Invalid address');
     (bool success, ) = payable(to).call{ value: amount }('');
     require(success, 'Transfer failed');
+  }
+
+  // Helper function to check if seller is in the list
+  function isSellerInList(address seller) internal view returns (bool) {
+    for (uint i = 0; i < registeredSellersList.length; i++) {
+      if (registeredSellersList[i] == seller) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function getSeller(
+    address seller
+  )
+    external
+    view
+    returns (
+      SellerProfile memory profile,
+      SellerStatus status,
+      uint256 balance,
+      uint256[] memory productIds
+    )
+  {
+    require(registeredSellers[seller], 'Seller not registered');
+
+    profile = sellerProfiles[seller];
+    status = sellerStatus[seller];
+    balance = sellerBalances[seller];
+    productIds = sellerProducts[seller];
+
+    return (profile, status, balance, productIds);
+  }
+
+  function getUser(
+    address user
+  )
+    external
+    view
+    returns (bool isRegistered, UserProfile memory profile, bool isSeller, SellerStatus sellerState)
+  {
+    isRegistered = registeredUsers[user];
+
+    if (isRegistered) {
+      profile = userProfiles[user];
+    } else {
+      profile = UserProfile({ name: '', email: '', avatar: '', registeredAt: 0, isActive: false });
+    }
+
+    isSeller = registeredSellers[user];
+    sellerState = isSeller ? sellerStatus[user] : SellerStatus.Unverified;
+
+    return (isRegistered, profile, isSeller, sellerState);
+  }
+
+  function getPendingVerificationUsers() external view returns (address[] memory) {
+    uint256 count = 0;
+    for (uint256 i = 0; i < usersList.length; i++) {
+      address user = usersList[i];
+      if (registeredUsers[user] && !registeredSellers[user]) {
+        count++;
+      }
+    }
+
+    address[] memory pendingUsers = new address[](count);
+    uint256 index = 0;
+
+    for (uint256 i = 0; i < usersList.length; i++) {
+      address user = usersList[i];
+      if (registeredUsers[user] && !registeredSellers[user]) {
+        pendingUsers[index] = user;
+        index++;
+      }
+    }
+
+    return pendingUsers;
+  }
+
+  function registerUser(string memory name, string memory email, string memory avatar) external {
+    require(!registeredUsers[msg.sender], 'User already registered');
+    require(bytes(name).length > 0, 'Name cannot be empty');
+    require(bytes(email).length > 0, 'Email cannot be empty');
+
+    userProfiles[msg.sender] = UserProfile({
+      name: name,
+      email: email,
+      avatar: avatar,
+      registeredAt: block.timestamp,
+      isActive: true
+    });
+
+    registeredUsers[msg.sender] = true;
+    usersList.push(msg.sender);
+
+    emit UserRegistered(msg.sender, name);
+  }
+
+  function grantOwnerSellerAccess() external onlyOwner {
+    address ownerAddress = owner();
+    if (!registeredSellers[ownerAddress]) {
+      registeredSellers[ownerAddress] = true;
+      sellerStatus[ownerAddress] = SellerStatus.Verified;
+      registeredSellersList.push(ownerAddress);
+    }
   }
 }

@@ -1,45 +1,47 @@
 import { useEffect, useState } from 'react'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
 import { getAllSellers, updateSellerStatus } from '@/services/blockchain'
-import { SellerProfile, SellerStatus } from '@/utils/type.dt'
+import { SellerData, SellerStatus } from '@/utils/type.dt'
 import { toast } from 'react-toastify'
-import { Loader2 } from 'lucide-react'
-
-interface SellerData {
-  address: string
-  profile: SellerProfile
-  status: SellerStatus
-}
+import { Loader2, Search, Filter } from 'lucide-react'
+import { SellerCard } from '@/components/sellers/SellerCard'
 
 const SellerManagementPage = () => {
   const [sellers, setSellers] = useState<SellerData[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<SellerStatus | 'all'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    loadSellers()
+    loadAllSellers()
   }, [])
 
-  const loadSellers = async () => {
+  const loadAllSellers = async () => {
     try {
       const data = await getAllSellers()
       setSellers(data)
     } catch (error) {
-      console.error('Error loading sellers:', error)
       toast.error('Failed to load sellers')
     } finally {
       setLoading(false)
     }
   }
 
+  const filteredSellers = sellers.filter(seller => {
+    const matchesSearch = seller.profile.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         seller.profile.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || seller.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
   const handleUpdateStatus = async (address: string, newStatus: SellerStatus) => {
     setUpdating(address)
     try {
       await updateSellerStatus(address, newStatus)
-      await loadSellers() // Refresh the list
+      await loadAllSellers()
       toast.success('Seller status updated successfully')
     } catch (error) {
-      console.error('Error updating seller status:', error)
       toast.error('Failed to update seller status')
     } finally {
       setUpdating(null)
@@ -49,91 +51,63 @@ const SellerManagementPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+          <p className="text-gray-400 animate-pulse">Loading sellers...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">Seller Management</h1>
-        <span className="text-gray-400">{sellers.length} Sellers</span>
+    <div className="p-6 space-y-8">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between bg-gray-800/40 p-6 rounded-2xl backdrop-blur-lg">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Seller Management</h1>
+          <p className="text-gray-400 mt-2">Manage and monitor seller accounts</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 
+              group-focus-within:text-indigo-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Search sellers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-xl
+                text-sm text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
+                transition-all duration-200"
+            />
+          </div>
+          <div className="relative group">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4
+              group-focus-within:text-indigo-500 transition-colors" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as SellerStatus | 'all')}
+              className="w-full sm:w-48 pl-10 pr-4 py-2.5 bg-gray-900/50 border border-gray-700 rounded-xl
+                text-sm text-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
+                transition-all duration-200 appearance-none cursor-pointer"
+            >
+              <option value="all">All Statuses</option>
+              <option value={SellerStatus.Pending}>Pending</option>
+              <option value={SellerStatus.Verified}>Verified</option>
+              <option value={SellerStatus.Suspended}>Suspended</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {sellers.map((seller) => (
-          <div
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {filteredSellers.map((seller) => (
+          <SellerCard
             key={seller.address}
-            className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 space-y-4"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">
-                  {seller.profile.businessName}
-                </h3>
-                <p className="text-sm text-gray-400 mt-1">{seller.profile.email}</p>
-              </div>
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
-                seller.status === SellerStatus.Verified
-                  ? 'bg-green-500/20 text-green-400'
-                  : seller.status === SellerStatus.Pending
-                  ? 'bg-yellow-500/20 text-yellow-400'
-                  : 'bg-red-500/20 text-red-400'
-              }`}>
-                {SellerStatus[seller.status]}
-              </span>
-            </div>
-
-            <p className="text-sm text-gray-400 line-clamp-2">
-              {seller.profile.description}
-            </p>
-
-            <div className="pt-4 border-t border-gray-700/50">
-              <div className="flex gap-2">
-                {seller.status === SellerStatus.Pending && (
-                  <>
-                    <button
-                      onClick={() => handleUpdateStatus(seller.address, SellerStatus.Verified)}
-                      disabled={updating === seller.address}
-                      className="flex-1 px-3 py-2 bg-green-600/20 text-green-400 rounded-lg
-                        hover:bg-green-600/30 disabled:opacity-50 transition-all duration-200"
-                    >
-                      Verify
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(seller.address, SellerStatus.Suspended)}
-                      disabled={updating === seller.address}
-                      className="flex-1 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg
-                        hover:bg-red-600/30 disabled:opacity-50 transition-all duration-200"
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-                {seller.status === SellerStatus.Verified && (
-                  <button
-                    onClick={() => handleUpdateStatus(seller.address, SellerStatus.Suspended)}
-                    disabled={updating === seller.address}
-                    className="w-full px-3 py-2 bg-red-600/20 text-red-400 rounded-lg
-                      hover:bg-red-600/30 disabled:opacity-50 transition-all duration-200"
-                  >
-                    Suspend
-                  </button>
-                )}
-                {seller.status === SellerStatus.Suspended && (
-                  <button
-                    onClick={() => handleUpdateStatus(seller.address, SellerStatus.Verified)}
-                    disabled={updating === seller.address}
-                    className="w-full px-3 py-2 bg-green-600/20 text-green-400 rounded-lg
-                      hover:bg-green-600/30 disabled:opacity-50 transition-all duration-200"
-                  >
-                    Reactivate
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+            seller={seller}
+            mode="management"
+            updating={updating}
+            onUpdateStatus={handleUpdateStatus}
+          />
         ))}
       </div>
     </div>

@@ -1,18 +1,17 @@
 export interface ProductParams {
   id?: number
-  seller: string
   name: string
   description: string
   price: string | number
   stock: string | number
   colors: string[]
-  sizes?: string[]
+  sizes: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
   weight: string | number
-  model?: string
-  brand?: string
+  model: string
+  brand: string
   sku: string | number
 }
 
@@ -21,17 +20,17 @@ export interface ProductStruct {
   seller: string
   name: string
   description: string
-  price: string | number
-  stock: string | number
+  price: bigint
+  stock: number
   colors: string[]
-  sizes?: string[]
+  sizes: string[]
   images: string[]
   category: string
   subCategory: string
-  weight: string | number
-  model?: string
-  brand?: string
-  sku: string | number
+  weight: number
+  model: string
+  brand: string
+  sku: number
   soldout: boolean
   wishlist: boolean
   deleted: boolean
@@ -61,7 +60,6 @@ export interface CategoryStruct {
   name: string
   isActive: boolean
   subCategoryIds: number[]
-  subCategories?: SubCategoryStruct[]
 }
 
 export interface SubCategoryStruct {
@@ -72,12 +70,12 @@ export interface SubCategoryStruct {
 }
 
 export interface ReviewStruct {
-  reviewId: number;
-  reviewer: string;
-  rating: number;
-  comment: string;
-  deleted: boolean;
-  timestamp: number;
+  reviewId: number
+  reviewer: string
+  rating: number
+  comment: string
+  deleted: boolean
+  timestamp: number
 }
 
 export interface ShippingDetails {
@@ -103,10 +101,10 @@ export interface PurchaseHistoryStruct {
 }
 
 export enum SellerStatus {
-  Unverified,
-  Pending,
-  Verified,
-  Suspended,
+  Unverified = 0,
+  Pending = 1,
+  Verified = 2,
+  Suspended = 3,
 }
 
 // Add contract event types
@@ -128,36 +126,34 @@ export interface DeliveryStatusUpdatedEvent {
 export interface ProductInput {
   name: string
   description: string
-  price: string | number
-  stock: string | number
+  price: number
+  stock: number
   colors: string[]
-  sizes?: string[]
+  sizes: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
-  weight: string | number
-  model?: string
-  brand?: string
-  sku: string | number
-  seller: string
+  weight: number
+  model: string
+  brand: string
+  sku: number
 }
 
 // Update ProductInput interface to match the form
 export interface ProductInput {
   name: string
   description: string
-  price: string | number
-  stock: string | number
+  price: number
+  stock: number
   colors: string[]
-  sizes?: string[]
+  sizes: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
-  weight: string | number
-  model?: string
-  brand?: string
-  sku: string | number
-  seller: string
+  weight: number
+  model: string
+  brand: string
+  sku: number
 }
 
 // Update ProductStruct to match
@@ -166,17 +162,17 @@ export interface ProductStruct {
   seller: string
   name: string
   description: string
-  price: string | number
-  stock: string | number
+  price: bigint
+  stock: number
   colors: string[]
-  sizes?: string[]
+  sizes: string[]
   images: string[]
   category: string
   subCategory: string
-  weight: string | number
-  model?: string
-  brand?: string
-  sku: string | number
+  weight: number
+  model: string
+  brand: string
+  sku: number
   soldout: boolean
   wishlist: boolean
   deleted: boolean
@@ -185,45 +181,45 @@ export interface ProductStruct {
 
 // Update CartItem interface
 export interface CartItem extends ProductStruct {
-  quantity: number;
-  
-  selectedColor?: string;
-  selectedSize?: string;
+  quantity: number
+
+  selectedColor?: string
+  selectedSize?: string
 }
 
 export interface SellerProfile {
-  businessName: string;
-  description: string;
-  email: string;
-  phone: string;
-  logo: string;
-  registeredAt: number;
-  termsAccepted: boolean;
+  businessName: string
+  description: string
+  email: string
+  phone: string
+  logo: string
+  registeredAt: number
+  termsAccepted: boolean
 }
 
 export interface SellerRegistrationParams {
-  businessName: string;
-  description: string;
-  email: string;
-  phone: string;
-  logo: string;
+  businessName: string
+  description: string
+  email: string
+  phone: string
+  logo: string
 }
 
 // Update ProductInput to match createProduct function parameters
 export interface ProductInput {
   name: string
   description: string
-  price: string | number  // Will be converted to Wei
-  stock: string | number  // Will be converted to number
+  price: number
+  stock: number
   colors: string[]
-  sizes?: string[]
+  sizes: string[]
   images: string[]
   categoryId: number
   subCategoryId: number
-  weight: string | number  // Will be converted to grams
-  model?: string
-  brand?: string
-  sku: string | number    // Will be generated using Date.now()
+  weight: number
+  model: string
+  brand: string
+  sku: number
 }
 
 // Add missing event types used in blockchain.tsx
@@ -237,8 +233,8 @@ export interface ContractEvent {
 // Update PurchaseHistoryStruct to match blockchain service
 export interface PurchaseHistoryStruct {
   productId: number
-  totalAmount: number     // Stored in Wei, converted to ETH
-  basePrice: number      // Stored in Wei, converted to ETH
+  totalAmount: number
+  basePrice: number
   timestamp: number
   buyer: string
   seller: string
@@ -262,7 +258,6 @@ export interface CategoryStruct {
   name: string
   isActive: boolean
   subCategoryIds: number[]
-  subCategories?: SubCategoryStruct[]  // Optional as not always populated
 }
 
 // Update SubCategoryStruct to match blockchain service
@@ -316,4 +311,27 @@ export type Timestamp = number
 export interface TransactionResult {
   hash: string
   wait: () => Promise<any>
+}
+
+export interface UserProfile {
+  name: string
+  email: string
+  avatar: string
+  registeredAt: number
+  isActive: boolean
+}
+
+export interface UserData {
+  isRegistered: boolean
+  profile: UserProfile | null
+  isSeller: boolean
+  sellerStatus: SellerStatus
+}
+
+export interface SellerData {
+  address: string
+  profile: SellerProfile
+  status: SellerStatus
+  balance: number
+  productIds: number[]
 }

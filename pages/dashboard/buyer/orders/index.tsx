@@ -1,11 +1,12 @@
+import withBuyerLayout from '@/components/hoc/withBuyerLayout'
 import React from 'react'
 
-const index = () => {
+const OrdersPage = () => {
   return (
     <div>
-      <h1>Review</h1>
+      <h1 className="text-2xl font-bold text-white">Orders</h1>
     </div>
   )
 }
 
-export default index
+export default withBuyerLayout(OrdersPage)

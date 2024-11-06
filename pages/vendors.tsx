@@ -2,7 +2,7 @@ import React from 'react'
 
 const categories = () => {
   return <div>
-    Vendor page
+    Vendor page 
   </div>
 
 

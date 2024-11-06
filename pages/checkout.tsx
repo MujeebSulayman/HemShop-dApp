@@ -4,6 +4,8 @@ import { useAccount } from 'wagmi'
 import { buyProduct } from '@/services/blockchain'
 import { toast } from 'react-toastify'
 import { useRouter } from 'next/router'
+import { fromWei } from '@/services/blockchain'
+import { ethers } from 'ethers'
 
 interface ShippingDetails {
   fullName: string
@@ -21,7 +23,7 @@ const Checkout = () => {
   const { cartItems, clearCart } = useCart()
   const { address } = useAccount()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   const [shippingDetails, setShippingDetails] = useState<ShippingDetails>({
     fullName: '',
     streetAddress: '',
@@ -30,55 +32,62 @@ const Checkout = () => {
     country: '',
     postalCode: '',
     phone: '',
-    email: ''
+    email: '',
   })
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    // Check all required fields with console logging
+    const newErrors: Record<string, string> = {}
+
+    // Required fields validation
     const requiredFields = {
       fullName: 'Full name',
       email: 'Email',
       phone: 'Phone',
-      streetAddress: 'Street address',
+      streetAddress: 'Street address', 
       city: 'City',
       state: 'State',
       country: 'Country',
       postalCode: 'Postal code'
-    };
+    }
 
     Object.entries(requiredFields).forEach(([field, label]) => {
       if (!shippingDetails[field as keyof ShippingDetails]?.trim()) {
-        newErrors[field] = `${label} is required`;
-        console.log(`Missing field: ${field} (${label})`);
+        newErrors[field] = `${label} is required`
       }
-    });
+    })
 
-    // Log all shipping details for debugging
-    console.log('Current shipping details:', shippingDetails);
-    console.log('Validation errors:', newErrors);
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (shippingDetails.email && !emailRegex.test(shippingDetails.email)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    // Phone validation
+    const phoneRegex = /^\+?[\d\s-]{8,}$/
+    if (shippingDetails.phone && !phoneRegex.test(shippingDetails.phone)) {
+      newErrors.phone = 'Please enter a valid phone number'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setShippingDetails(prev => ({
+    setShippingDetails((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
-      toast.error('Please fill in all required fields correctly');
-      return;
+      toast.error('Please fill in all required fields correctly')
+      return
     }
 
     if (!address) {
@@ -95,33 +104,49 @@ const Checkout = () => {
     try {
       // Process each item in the cart
       for (const item of cartItems) {
+        const itemPrice = Number(safeFromWei(item.price)) * item.quantity
+        
         await buyProduct(
           Number(item.id),
           shippingDetails,
-          Number(item.price) * item.quantity
+          itemPrice
         )
       }
 
+      // Clear cart and show success message
       clearCart()
-      toast.success('Purchase successful!')
-      router.push('/store')
+      toast.success('Purchase successful! Check your profile for order details.')
+      
+      // Redirect to store page
+      router.push('/dashboard/user/purchases')
     } catch (error: any) {
-      toast.error(error?.message || 'Failed to process purchase')
-      console.error(error)
+      console.error('Checkout error:', error)
+      toast.error(error?.message || 'Failed to process purchase. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const safeFromWei = (value: string | number): string => {
+    try {
+      return ethers.formatEther(value.toString())
+    } catch (error) {
+      console.error('Error converting value:', error)
+      return '0'
+    }
+  }
+
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (Number(item.price) * item.quantity), 0)
+    return cartItems.reduce((total, item) => {
+      return total + (BigInt(item.price) * BigInt(item.quantity))
+    }, BigInt(0))
   }
 
   return (
     <div className="bg-gray-900 pt-[3rem] lg:pt-[6rem] min-h-screen">
       <div className="max-w-[1400px] mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center text-white mb-8">Checkout</h1>
-        
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content - Left Side */}
           <div className="flex-1 space-y-6">
@@ -147,7 +172,7 @@ const Checkout = () => {
                     <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm text-gray-300">Email</label>
                   <input
@@ -208,9 +233,7 @@ const Checkout = () => {
                     className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
                   />
-                  {errors.state && (
-                    <p className="text-red-500 text-sm mt-1">{errors.state}</p>
-                  )}
+                  {errors.state && <p className="text-red-500 text-sm mt-1">{errors.state}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -225,9 +248,7 @@ const Checkout = () => {
                     className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     required
                   />
-                  {errors.country && (
-                    <p className="text-red-500 text-sm mt-1">{errors.country}</p>
-                  )}
+                  {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -254,7 +275,7 @@ const Checkout = () => {
           <div className="w-full lg:w-[380px]">
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 lg:sticky lg:top-8">
               <h2 className="text-xl font-semibold text-white mb-6">Order Summary</h2>
-              
+
               {/* Cart Items */}
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600">
                 {cartItems.map((item) => (
@@ -269,7 +290,7 @@ const Checkout = () => {
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-sm text-gray-400">Qty: {item.quantity}</span>
                         <span className="text-sm font-medium text-white">
-                          {(Number(item.price) * item.quantity).toFixed(4)} ETH
+                          {item.quantity} × {Number(safeFromWei(item.price)).toFixed(4)} ETH
                         </span>
                       </div>
                     </div>
@@ -281,7 +302,7 @@ const Checkout = () => {
               <div className="mt-6 space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white">{getCartTotal().toFixed(4)} ETH</span>
+                  <span className="text-white">{ethers.formatEther(getCartTotal().toString())} ETH</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Network Fee</span>
@@ -290,7 +311,9 @@ const Checkout = () => {
                 <div className="pt-4 border-t border-gray-700/50">
                   <div className="flex justify-between text-lg font-semibold">
                     <span className="text-white">Total</span>
-                    <span className="text-white">{(getCartTotal() + 0.001).toFixed(4)} ETH</span>
+                    <span className="text-white">
+                      {(Number(ethers.formatEther(getCartTotal().toString())) + 0.001).toFixed(4)} ETH
+                    </span>
                   </div>
                 </div>
 

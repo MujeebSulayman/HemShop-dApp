@@ -860,6 +860,20 @@ const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
   }))
 }
 
+const safeFromWei = (value: string | number | bigint): string => {
+  try {
+    // Handle BigInt values
+    if (typeof value === 'bigint') {
+      return ethers.formatEther(value)
+    }
+    // Handle string/number values
+    return ethers.formatEther(value.toString())
+  } catch (error) {
+    console.error('Error converting value:', error)
+    return '0'
+  }
+}
+
 export {
   createProduct,
   updateProduct,
@@ -904,4 +918,5 @@ export {
   registerUser,
   isOwnerOrVerifiedSeller,
   checkSellerVerification,
+  safeFromWei,
 }

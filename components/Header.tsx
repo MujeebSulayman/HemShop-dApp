@@ -10,6 +10,7 @@ import { BiStore } from 'react-icons/bi'
 import { Menu, Transition } from '@headlessui/react'
 import { FiChevronDown, FiUser, FiPackage, FiSettings } from 'react-icons/fi'
 import { useCart } from '@/contexts/CartContext'
+import { fromWei } from '@/services/blockchain'
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -46,6 +47,15 @@ const Header: React.FC = () => {
       icon: FiUser,
     },
   ]
+
+  const safeFromWei = (value: string | number): string => {
+    try {
+      return fromWei(value.toString())
+    } catch (error) {
+      console.error('Error converting value:', error)
+      return '0'
+    }
+  }
 
   return (
     <motion.header
@@ -163,7 +173,7 @@ const Header: React.FC = () => {
                           <div className="flex-1">
                             <h3 className="text-sm font-medium text-white">{item.name}</h3>
                             <p className="text-xs text-gray-400">
-                              {item.quantity} × {item.price} ETH
+                              {item.quantity} × {safeFromWei(item.price)} ETH
                             </p>
                           </div>
                           <button

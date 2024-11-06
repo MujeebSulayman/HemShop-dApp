@@ -53,10 +53,14 @@ const VendorProducts = () => {
       product.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  if (loading) return <LoadingSpinner />
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <LoadingSpinner />
+    </div>
+  )
   if (error)
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="bg-red-500/10 text-red-400 px-4 py-2 rounded-lg border border-red-500/20">
           {error}
         </div>
@@ -64,7 +68,7 @@ const VendorProducts = () => {
     )
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800">
+    <div className="min-h-screen bg-black">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 opacity-50" />
@@ -77,21 +81,21 @@ const VendorProducts = () => {
                   <img
                     src={seller.profile.logo}
                     alt={seller.profile.businessName}
-                    className="w-32 h-32 rounded-2xl object-cover ring-4 ring-white/10"
+                    className="w-24 h-24 md:w-32 md:h-32 rounded-2xl object-cover ring-4 ring-white/10"
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-2xl bg-gray-800 flex items-center justify-center ring-4 ring-white/10">
-                    <Package className="w-16 h-16 text-gray-400" />
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl bg-gray-800 flex items-center justify-center ring-4 ring-white/10">
+                    <Package className="w-12 h-12 md:w-16 md:h-16 text-gray-400" />
                   </div>
                 )}
               </div>
 
               {/* Vendor Info */}
               <div className="flex-grow">
-                <h1 className="text-4xl font-bold text-white mb-4">
+                <h1 className="text-2xl md:text-4xl font-bold text-white mb-4">
                   {seller?.profile.businessName}
                 </h1>
-                <p className="text-gray-300 text-lg mb-6 max-w-3xl">
+                <p className="text-sm md:text-lg text-gray-300 mb-6 max-w-3xl">
                   {seller?.profile.description}
                 </p>
                 <div className="flex flex-wrap gap-4">
@@ -107,18 +111,18 @@ const VendorProducts = () => {
               </div>
 
               {/* Stats */}
-              <div className="flex-shrink-0 grid grid-cols-2 gap-4">
-                <div className="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/50">
-                  <div className="text-2xl font-bold text-white">{products.length}</div>
-                  <div className="text-gray-400 text-sm">Products</div>
+              <div className="flex-shrink-0 grid grid-cols-2 gap-2 md:gap-4">
+                <div className="bg-gray-800/50 rounded-xl p-3 md:p-4 backdrop-blur-sm border border-gray-700/50">
+                  <div className="text-xl md:text-2xl font-bold text-white">{products.length}</div>
+                  <div className="text-xs md:text-sm text-gray-400">Products</div>
                 </div>
-                <div className="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/50">
-                  <div className="text-2xl font-bold text-white">
+                <div className="bg-gray-800/50 rounded-xl p-3 md:p-4 backdrop-blur-sm border border-gray-700/50">
+                  <div className="text-xl md:text-2xl font-bold text-white">
                     {calculateAverageRating(products.flatMap((product) => product.reviews)).toFixed(
                       1
                     )}
                   </div>
-                  <div className="text-gray-400 text-sm">Rating</div>
+                  <div className="text-xs md:text-sm text-gray-400">Rating</div>
                 </div>
               </div>
             </div>

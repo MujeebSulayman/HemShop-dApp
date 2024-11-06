@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
-import { buyProduct } from '@/services/blockchain'
+import { buyProduct, fromWei } from '@/services/blockchain'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useRouter } from 'next/router'
@@ -15,7 +15,19 @@ const Cart = () => {
   const { address } = useAccount()
   const router = useRouter()
 
-  const subtotal = cartItems.reduce((total, item) => total + Number(item.price) * item.quantity, 0)
+  const safeFromWei = (value: string | number): string => {
+    try {
+      return fromWei(value.toString())
+    } catch (error) {
+      console.error('Error converting value:', error)
+      return '0'
+    }
+  }
+
+  const subtotal = cartItems.reduce((total, item) => {
+    const priceInEth = Number(safeFromWei(item.price))
+    return total + priceInEth * item.quantity
+  }, 0)
   const shippingFee = 0.001 // Example shipping fee in ETH
   const total = subtotal + shippingFee
 
@@ -118,12 +130,12 @@ const Cart = () => {
               
               <div className="flex items-center justify-between border-t border-gray-700 pt-4">
                 <p className="text-sm text-gray-300">Shipping</p>
-                <p className="text-sm font-medium text-white">{shippingFee} ETH</p>
+                <p className="text-sm font-medium text-white">{shippingFee.toFixed(4)} ETH</p>
               </div>
               
               <div className="flex items-center justify-between border-t border-gray-700 pt-4">
                 <p className="text-base font-medium text-white">Total</p>
-                <p className="text-base font-medium text-white">{total.toFixed(4)} ETH</p>
+                <p className="text-base font-medium text-white">{(subtotal + shippingFee).toFixed(4)} ETH</p>
               </div>
             </div>
 

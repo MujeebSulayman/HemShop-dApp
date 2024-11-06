@@ -7,8 +7,37 @@ import {
   UserGroupIcon, ChartBarIcon, ScaleIcon, TagIcon,
   ClockIcon, CheckCircleIcon
 } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { useAccount } from 'wagmi'
+import { getSellerStatus, getEthereumContract } from '@/services/blockchain'
+import { SellerStatus } from '@/utils/type.dt'
+import { VerifiedIcon, XCircleIcon } from 'lucide-react'
 
 const AdminDashboard = () => {
+  const { address } = useAccount()
+  const [status, setStatus] = useState<SellerStatus>(SellerStatus.Unverified)
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      if (!address) return
+      try {
+        const contract = await getEthereumContract()
+        const owner = await contract.owner()
+        
+        if (address.toLowerCase() === owner.toLowerCase()) {
+          setStatus(SellerStatus.Verified)
+        } else {
+          const statusData = await getSellerStatus(address)
+          setStatus(statusData)
+        }
+      } catch (error) {
+        console.error('Error loading status:', error)
+      }
+    }
+
+    loadStatus()
+  }, [address])
+
   const mainMetrics = [
     { 
       title: 'Gross Merchandise Value', 
@@ -74,7 +103,14 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-white">Dashboard Overview</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-white">Dashboard Overview</h1>
+          {status === SellerStatus.Verified ? (
+            <VerifiedIcon className="w-6 h-6 text-blue-500" />
+          ) : (
+            <XCircleIcon className="w-6 h-6 text-red-500" />
+          )}
+        </div>
         <div className="text-sm text-gray-400">Last updated: {new Date().toLocaleDateString()}</div>
       </div>
       

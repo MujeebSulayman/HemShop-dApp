@@ -2,16 +2,20 @@ import React, { ReactNode, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import {
-  HomeIcon, ShoppingCartIcon, UsersIcon, ChartBarIcon,
-  CogIcon, CubeIcon, ShoppingBagIcon, ArrowPathIcon,
-  CurrencyDollarIcon, CheckBadgeIcon, BanknotesIcon, FolderIcon
+  HomeIcon,
+  ShoppingBagIcon,
+  CubeIcon,
+  ClipboardDocumentListIcon,
+  StarIcon,
+  UserIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline'
 
-interface AdminDashboardLayoutProps {
+interface SellerDashboardLayoutProps {
   children: ReactNode
 }
 
-const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
+const SellerDashboardLayout = ({ children }: SellerDashboardLayoutProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const router = useRouter()
 
@@ -19,32 +23,22 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
     {
       title: 'Main',
       items: [
-        { label: 'Dashboard', path: '/dashboard/admin', icon: HomeIcon },
-        { label: 'Analytics', path: '/dashboard/admin/analytics', icon: ChartBarIcon },
-        { label: 'Sales Overview', path: '/dashboard/admin/sales', icon: CurrencyDollarIcon },
+        { label: 'Dashboard', path: '/dashboard/seller', icon: HomeIcon },
+        { label: 'Products', path: '/dashboard/seller/products', icon: CubeIcon },
+        { label: 'Create Product', path: '/dashboard/seller/products/create', icon: PlusIcon },
       ]
     },
     {
       title: 'Management',
       items: [
-        { label: 'Products', path: '/dashboard/admin/products', icon: CubeIcon },
-        { label: 'Orders', path: '/dashboard/admin/orders', icon: ShoppingCartIcon },
-        { label: 'Users', path: '/dashboard/admin/users', icon: UsersIcon },
-        { label: 'Sellers', path: '/dashboard/admin/sellers', icon: ShoppingBagIcon },
-        
-        {
-          label: 'Categories',
-          path: '/dashboard/admin/categories',
-          icon: FolderIcon
-        },
+        { label: 'Orders', path: '/dashboard/seller/orders', icon: ClipboardDocumentListIcon },
+        { label: 'Reviews', path: '/dashboard/seller/reviews', icon: StarIcon },
       ]
     },
     {
-      title: 'System',
+      title: 'Account',
       items: [
-        { label: 'Service Fee', path: '/dashboard/admin/service-fee', icon: BanknotesIcon },
-        { label: 'Switch Account', path: '/dashboard/admin/switch-account', icon: ArrowPathIcon },
-        { label: 'Settings', path: '/dashboard/admin/settings', icon: CogIcon },
+        { label: 'Profile', path: '/dashboard/seller/profile', icon: UserIcon },
       ]
     }
   ]
@@ -64,7 +58,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700/50">
             {!isCollapsed && (
               <span className="text-xl font-semibold text-white/90 transition-opacity duration-200">
-                Admin Dashboard
+                Seller Dashboard
               </span>
             )}
             <button 
@@ -79,7 +73,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-4 h-full">
             {navigationItems.map((section, idx) => (
-              <div key={idx} className="mb-6 transition-transform duration-200 ease-in-out">
+              <div key={idx} className="mb-6">
                 {!isCollapsed && (
                   <h3 className="px-4 text-xs font-semibold text-gray-400/80 uppercase tracking-wider mb-2">
                     {section.title}
@@ -116,7 +110,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
           <div className="flex items-center flex-1">
             <input
               type="search"
-              placeholder="Search..."
+              placeholder="Search products..."
               className="w-96 px-4 py-2 rounded-lg bg-gray-700 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 border-none"
             />
           </div>
@@ -132,7 +126,7 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
 
             {/* User Menu */}
             <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center">
-              A
+              S
             </div>
           </div>
         </header>
@@ -147,4 +141,4 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
   )
 }
 
-export default AdminDashboardLayout
+export default SellerDashboardLayout 

@@ -33,6 +33,38 @@ const Checkout = () => {
     email: ''
   })
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    // Check all required fields with console logging
+    const requiredFields = {
+      fullName: 'Full name',
+      email: 'Email',
+      phone: 'Phone',
+      streetAddress: 'Street address',
+      city: 'City',
+      state: 'State',
+      country: 'Country',
+      postalCode: 'Postal code'
+    };
+
+    Object.entries(requiredFields).forEach(([field, label]) => {
+      if (!shippingDetails[field as keyof ShippingDetails]?.trim()) {
+        newErrors[field] = `${label} is required`;
+        console.log(`Missing field: ${field} (${label})`);
+      }
+    });
+
+    // Log all shipping details for debugging
+    console.log('Current shipping details:', shippingDetails);
+    console.log('Validation errors:', newErrors);
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setShippingDetails(prev => ({
@@ -44,6 +76,11 @@ const Checkout = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields correctly');
+      return;
+    }
+
     if (!address) {
       toast.error('Please connect your wallet to proceed')
       return
@@ -81,171 +118,156 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col text-white w-full overflow-x-hidden mt-[2rem] pb-[100px]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="lg:grid lg:grid-cols-12 lg:gap-x-12">
-          {/* Shipping Form - Left Side */}
-          <div className="lg:col-span-7">
-            <div className="bg-gray-800 rounded-2xl p-8">
-              <h2 className="text-3xl font-bold text-white mb-8">Shipping Information</h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Personal Information Section */}
-                <div className="space-y-6">
-                  <h3 className="text-xl font-semibold text-white">Personal Details</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="col-span-2 md:col-span-1">
-                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-2">
-                        Full Name
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                        <input
-                          type="text"
-                          name="fullName"
-                          id="fullName"
-                          required
-                          value={shippingDetails.fullName}
-                          onChange={handleInputChange}
-                          className="block w-full pl-10 pr-4 py-3 rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
-                          placeholder="John Doe"
-                        />
-                      </div>
-                    </div>
-                    <div className="col-span-2 md:col-span-1">
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                        Email
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <input
-                          type="email"
-                          name="email"
-                          id="email"
-                          required
-                          value={shippingDetails.email}
-                          onChange={handleInputChange}
-                          className="block w-full pl-10 pr-4 py-3 rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition-colors duration-200"
-                          placeholder="john@example.com"
-                        />
-                      </div>
-                    </div>
-                  </div>
+    <div className="bg-gray-900 pt-[3rem] lg:pt-[6rem] min-h-screen">
+      <div className="max-w-[1400px] mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-center text-white mb-8">Checkout</h1>
+        
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content - Left Side */}
+          <div className="flex-1 space-y-6">
+            {/* Shipping Information */}
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-white mb-6">Shipping Details</h2>
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={shippingDetails.fullName}
+                    onChange={handleInputChange}
+                    className={`w-full bg-gray-700/50 border ${
+                      errors.fullName ? 'border-red-500' : 'border-gray-600'
+                    } rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent`}
+                    required
+                  />
+                  {errors.fullName && (
+                    <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={shippingDetails.email}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
                 </div>
 
-                {/* Shipping Address Section */}
-                <div className="space-y-6">
-                  <h3 className="text-xl font-semibold text-white">Shipping Address</h3>
-                  <div className="grid grid-cols-1 gap-6">
-                    <div>
-                      <label htmlFor="streetAddress" className="block text-sm font-medium text-gray-300">
-                        Street Address
-                      </label>
-                      <input
-                        type="text"
-                        name="streetAddress"
-                        id="streetAddress"
-                        required
-                        value={shippingDetails.streetAddress}
-                        onChange={handleInputChange}
-                        className="mt-2 block w-full rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 py-3"
-                        placeholder="123 Main St"
-                      />
-                    </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={shippingDetails.phone}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label htmlFor="city" className="block text-sm font-medium text-gray-300">
-                          City
-                        </label>
-                        <input
-                          type="text"
-                          name="city"
-                          id="city"
-                          required
-                          value={shippingDetails.city}
-                          onChange={handleInputChange}
-                          className="mt-2 block w-full rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 py-3"
-                          placeholder="City"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="postalCode" className="block text-sm font-medium text-gray-300">
-                          Postal Code
-                        </label>
-                        <input
-                          type="text"
-                          name="postalCode"
-                          id="postalCode"
-                          required
-                          value={shippingDetails.postalCode}
-                          onChange={handleInputChange}
-                          className="mt-2 block w-full rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 py-3"
-                          placeholder="Postal Code"
-                        />
-                      </div>
-                    </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm text-gray-300">Address</label>
+                  <input
+                    type="text"
+                    name="streetAddress"
+                    value={shippingDetails.streetAddress}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                </div>
 
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-300">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        id="phone"
-                        required
-                        value={shippingDetails.phone}
-                        onChange={handleInputChange}
-                        className="mt-2 block w-full rounded-lg border-transparent bg-gray-700 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 py-3"
-                        placeholder="+1 (555) 000-0000"
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={shippingDetails.city}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">
+                    State/Province <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={shippingDetails.state}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                  {errors.state && (
+                    <p className="text-red-500 text-sm mt-1">{errors.state}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">
+                    Country <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={shippingDetails.country}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                  {errors.country && (
+                    <p className="text-red-500 text-sm mt-1">{errors.country}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-300">
+                    Postal Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={shippingDetails.postalCode}
+                    onChange={handleInputChange}
+                    className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                  />
+                  {errors.postalCode && (
+                    <p className="text-red-500 text-sm mt-1">{errors.postalCode}</p>
+                  )}
                 </div>
               </form>
             </div>
           </div>
 
           {/* Order Summary - Right Side */}
-          <div className="lg:col-span-5">
-            <div className="bg-gray-800 rounded-2xl p-6 sticky top-24">
+          <div className="w-full lg:w-[380px]">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 lg:sticky lg:top-8">
               <h2 className="text-xl font-semibold text-white mb-6">Order Summary</h2>
-
-              {/* Product List */}
-              <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 
-                scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              
+              {/* Cart Items */}
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4 pb-6 border-b border-gray-700 last:border-0">
-                    {/* Product Image */}
-                    <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={item.images[0] || '/placeholder.png'}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Product Details */}
+                  <div key={item.id} className="flex gap-4 pb-4 border-b border-gray-700/50">
+                    <img
+                      src={item.images[0] || '/placeholder.png'}
+                      alt={item.name}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
                     <div className="flex-1">
-                      <h3 className="text-white font-medium">{item.name}</h3>
-                      
-                      {/* Specifications */}
-                      
-
-                      {/* Quantity and Price */}
+                      <h3 className="text-white font-medium line-clamp-1">{item.name}</h3>
                       <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm text-gray-400">
-                          Qty: {item.quantity}
-                        </span>
+                        <span className="text-sm text-gray-400">Qty: {item.quantity}</span>
                         <span className="text-sm font-medium text-white">
                           {(Number(item.price) * item.quantity).toFixed(4)} ETH
                         </span>
@@ -255,31 +277,29 @@ const Checkout = () => {
                 ))}
               </div>
 
-              {/* Order Totals */}
-              <div className="space-y-4 mt-6 pt-6 border-t border-gray-700">
+              {/* Total Section */}
+              <div className="mt-6 space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
                   <span className="text-white">{getCartTotal().toFixed(4)} ETH</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Shipping Fee</span>
-                  <span className="text-white">0 ETH</span>
+                  <span className="text-gray-400">Network Fee</span>
+                  <span className="text-white">~0.001 ETH</span>
                 </div>
-                <div className="pt-4 border-t border-gray-700">
-                  <div className="flex justify-between">
-                    <span className="text-lg font-semibold text-white">Total</span>
-                    <span className="text-lg font-semibold text-white">
-                      {getCartTotal().toFixed(4)} ETH
-                    </span>
+                <div className="pt-4 border-t border-gray-700/50">
+                  <div className="flex justify-between text-lg font-semibold">
+                    <span className="text-white">Total</span>
+                    <span className="text-white">{(getCartTotal() + 0.001).toFixed(4)} ETH</span>
                   </div>
                 </div>
 
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting || !address}
-                  className="w-full mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl
+                  className="w-full mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg
                     hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed
-                    transition-colors duration-200 flex items-center justify-center gap-2"
+                    transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>

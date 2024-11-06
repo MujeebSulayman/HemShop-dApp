@@ -15,9 +15,12 @@ import {
 } from '@/services/blockchain'
 import { ProductStruct, PurchaseHistoryStruct, CategoryStruct } from '@/utils/type.dt'
 import { Loader2 } from 'lucide-react'
+import { useAccount } from 'wagmi'
+import { fromWei } from 'web3-utils'
 
 const AnalyticsPage = () => {
   const [loading, setLoading] = useState(true)
+  const { address } = useAccount()
   const [metrics, setMetrics] = useState({
     totalProducts: 0,
     totalRevenue: 0,
@@ -34,20 +37,24 @@ const AnalyticsPage = () => {
 
   useEffect(() => {
     const fetchBlockchainData = async () => {
+      if (!address) return
+      
       try {
         setLoading(true)
         const [products, categories, balance, purchases] = await Promise.all([
           getProducts(),
           getAllCategories(),
-          getSellerBalance('YOUR_ADDRESS'),
-          getSellerPurchaseHistory('YOUR_ADDRESS')
+          getSellerBalance(address),
+          getSellerPurchaseHistory(address)
         ])
 
         // Calculate metrics
         const activeProducts = products.filter(p => !p.soldout && !p.deleted).length
         const soldOutProducts = products.filter(p => p.soldout).length
         const totalRevenue = purchases.reduce((sum, p) => sum + p.totalAmount, 0)
-        const averagePrice = products.reduce((sum, p) => sum + Number(p.price), 0) / products.length
+        const averagePrice = products.length > 0 
+          ? products.reduce((sum, p) => sum + Number(fromWei(p.price.toString())), 0) / products.length
+          : 0
 
         // Process category data
         const categoryStats = processCategoryData(products, categories)
@@ -75,7 +82,7 @@ const AnalyticsPage = () => {
     }
 
     fetchBlockchainData()
-  }, [])
+  }, [address])
 
   const processCategoryData = (products: ProductStruct[], categories: CategoryStruct[]) => {
     const categoryCount: Record<string, number> = {}

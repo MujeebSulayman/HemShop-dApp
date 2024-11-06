@@ -9,10 +9,6 @@ import {
   FiDollarSign,
   FiTruck,
   FiSearch,
-  FiFilter,
-  FiCalendar,
-  FiUser,
-  FiMapPin,
 } from 'react-icons/fi'
 
 const AdminOrdersPage = () => {

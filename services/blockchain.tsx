@@ -850,8 +850,8 @@ const structureReview = (reviews: any[]): ReviewStruct[] => {
 const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
   return history.map((item: any) => ({
     productId: Number(item.productId),
-    totalAmount: Number(fromWei(item.totalAmount)),
-    basePrice: Number(fromWei(item.basePrice)),
+    totalAmount: Number(safeFromWei(item.totalAmount)),
+    basePrice: Number(safeFromWei(item.basePrice)),
     timestamp: Number(item.timestamp),
     buyer: item.buyer,
     seller: item.seller,

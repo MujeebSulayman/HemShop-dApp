@@ -1,3 +1,4 @@
+import withUserLayout from '@/components/hoc/withUserLayout'
 import React from 'react'
 
 const Product = ({ id }: { id: string }) => {
@@ -8,4 +9,4 @@ const Product = ({ id }: { id: string }) => {
   )
 }
 
-export default Product
+export default withUserLayout(Product)

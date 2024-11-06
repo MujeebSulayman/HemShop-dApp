@@ -31,33 +31,26 @@ const Header: React.FC = () => {
     { href: '/store', label: 'Store' },
     { href: '/deals', label: 'Deals' },
     { href: '/vendors', label: 'Vendors' },
-
   ]
 
   const accountLinks = [
-    { 
-      href: '/dashboard/buyer', 
-      label: 'Buyer Dashboard',
-      icon: FiUser
+    {
+      href: '/dashboard/user',
+      label: 'Dashboard',
+      icon: FiUser,
     },
-    { 
-      href: '/dashboard/seller', 
-      label: 'Seller Dashboard',
-      icon: FiPackage
-    },
-    { 
-      href: '/dashboard/admin', 
+
+    {
+      href: '/dashboard/admin',
       label: 'Admin Dashboard',
-      icon: FiSettings
+      icon: FiUser,
     },
   ]
 
   return (
     <motion.header
       className={`fixed z-50 top-0 right-0 left-0 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-black/10 backdrop-blur-md shadow-lg' 
-          : 'bg-transparent'
+        scrolled ? 'bg-black/10 backdrop-blur-md shadow-lg' : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,7 +151,10 @@ const Header: React.FC = () => {
                   {cartItems.length > 0 ? (
                     <div className="px-4 py-2">
                       {cartItems.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3 py-2 border-b border-white/10">
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 py-2 border-b border-white/10"
+                        >
                           <img
                             src={item.images[0] || '/placeholder.png'}
                             alt={item.name}
@@ -187,9 +183,7 @@ const Header: React.FC = () => {
                       </Link>
                     </div>
                   ) : (
-                    <div className="px-4 py-6 text-center text-gray-400">
-                      Your cart is empty
-                    </div>
+                    <div className="px-4 py-6 text-center text-gray-400">Your cart is empty</div>
                   )}
                 </Menu.Items>
               </Transition>
@@ -273,21 +267,18 @@ const Header: React.FC = () => {
   )
 }
 
-const NavLink: React.FC<{ 
-  href: string; 
-  children: React.ReactNode; 
-  mobile?: boolean;
-}> = ({
-  href,
-  children,
-  mobile,
-}) => (
+const NavLink: React.FC<{
+  href: string
+  children: React.ReactNode
+  mobile?: boolean
+}> = ({ href, children, mobile }) => (
   <Link href={href} passHref legacyBehavior>
     <motion.span
       className={`
-        ${mobile 
-          ? 'block text-base px-3 py-2 rounded-lg hover:bg-white/10 text-white' 
-          : 'inline-flex items-center text-base font-medium text-white hover:text-white/80 relative group'
+        ${
+          mobile
+            ? 'block text-base px-3 py-2 rounded-lg hover:bg-white/10 text-white'
+            : 'inline-flex items-center text-base font-medium text-white hover:text-white/80 relative group'
         }
         cursor-pointer transition-colors
       `}

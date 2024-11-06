@@ -12,11 +12,9 @@ import {
   SellerProfile,
   SellerRegistrationParams,
   CategoryStruct,
-  UserProfile,
   UserData,
   SellerData,
 } from '@/utils/type.dt'
-import { useAccount } from 'wagmi'
 
 // Utility functions
 const toWei = (num: number): bigint => {
@@ -27,7 +25,7 @@ const toWei = (num: number): bigint => {
   }
 }
 
-const fromWei = (num: bigint | string): string => {
+export const fromWei = (num: bigint | string): string => {
   try {
     return ethers.formatEther(num.toString())
   } catch (error) {
@@ -75,7 +73,7 @@ const createProduct = async (params: ProductParams): Promise<void> => {
       weight: Math.round(Number(params.weight) * 1000),
       model: params.model || '',
       brand: params.brand || '',
-      sku: Number(params.sku) || Date.now()
+      sku: Number(params.sku) || Date.now(),
     }
 
     const tx = await contract.createProduct(productInput)
@@ -138,9 +136,14 @@ const getProduct = async (productId: number): Promise<ProductStruct> => {
 }
 
 const getMyProducts = async (): Promise<ProductStruct[]> => {
-  const contract = await getEthereumContract()
-  const products = await contract.getMyProducts()
-  return structureProduct(products)
+  try {
+    const contract = await getEthereumContract()
+    const products = await contract.getSellerProducts(ethereum.selectedAddress)
+    return structureProduct(products)
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
 }
 
 const getProducts = async (): Promise<ProductStruct[]> => {
@@ -486,60 +489,14 @@ const deleteSubCategory = async (id: number): Promise<void> => {
   }
 }
 
-const structureProduct = (products: ProductStruct[]): ProductStruct[] => {
-  return products
-    .map((product) => ({
-      ...product,
-      id: Number(product.id),
-      price: BigInt(product.price),
-      stock: Number(product.stock),
-      category: String(product.category),
-      subCategory: String(product.subCategory),
-      weight: Number(product.weight),
-      sku: Number(product.sku),
-      reviews: structureReview(product.reviews),
-    }))
-    .sort((a, b) => a.id - b.id)
-}
-
-const structureReview = (reviews: ReviewStruct[]): ReviewStruct[] => {
-  return reviews
-    .map((review) => ({
-      reviewId: Number(review.reviewId),
-      reviewer: review.reviewer,
-      rating: Number(review.rating),
-      comment: review.comment,
-      deleted: review.deleted,
-      timestamp: Number(review.timestamp),
-    }))
-    .sort((a, b) => b.timestamp - a.timestamp)
-}
-
-const structurePurchaseHistory = (
-  purchaseHistory: PurchaseHistoryStruct[]
-): PurchaseHistoryStruct[] => {
-  return purchaseHistory
-    .map((purchase) => ({
-      productId: Number(purchase.productId),
-      totalAmount: parseFloat(fromWei(purchase.totalAmount.toString())),
-      basePrice: parseFloat(fromWei(purchase.basePrice.toString())),
-      timestamp: Number(purchase.timestamp),
-      buyer: purchase.buyer,
-      seller: purchase.seller,
-      isDelivered: purchase.isDelivered,
-      shippingDetails: purchase.shippingDetails,
-    }))
-    .sort((a, b) => a.timestamp - b.timestamp)
-}
-
 const getPendingSellers = async (): Promise<string[]> => {
   try {
     const contract = await getEthereumContract()
     console.log('Contract instance:', contract)
-    
+
     const pendingSellers = await contract.getPendingVerificationUsers()
     console.log('Raw pending sellers response:', pendingSellers)
-    
+
     return pendingSellers
   } catch (error) {
     console.error('Error in getPendingSellers:', error)
@@ -618,7 +575,6 @@ const registerAndVerifyContractOwner = async (): Promise<void> => {
 
   try {
     const contract = await getEthereumContract()
-    const contractAddress = address.hemShopContract
     const currentAddress = ethereum.selectedAddress
 
     // Verify caller is contract owner
@@ -627,30 +583,37 @@ const registerAndVerifyContractOwner = async (): Promise<void> => {
       throw new Error('Only contract owner can perform this action')
     }
 
+    // Register owner as user first if not already registered
+    const userData = await contract.getUser(currentAddress)
+    if (!userData.isRegistered) {
+      const userTx = await contract.registerUser(
+        'Contract Owner',
+        'admin@hemshop.com',
+        ''
+      )
+      await userTx.wait()
+    }
+
     // Register owner as seller if not already registered
     const isRegistered = await contract.registeredSellers(currentAddress)
     if (!isRegistered) {
-      tx = await contract.registerSeller(
+      const sellerTx = await contract.registerSeller(
         'Contract Owner Shop',
         'Official contract owner shop',
         'admin@hemshop.com',
         '0000000000',
-        '',
-        { from: currentAddress }
+        ''
       )
-      await tx.wait()
+      await sellerTx.wait()
     }
 
     // Ensure owner has verified status
-    const currentStatus = await contract.getSellerStatus(currentAddress)
-    if (currentStatus !== SellerStatus.Verified) {
-      tx = await contract.updateSellerStatus(currentAddress, SellerStatus.Verified)
-      await tx.wait()
+    const sellerData = await contract.getSeller(currentAddress)
+    if (sellerData.status !== SellerStatus.Verified) {
+      const statusTx = await contract.updateSellerStatus(currentAddress, SellerStatus.Verified)
+      await statusTx.wait()
     }
 
-    // Grant owner access to all seller functions
-    tx = await contract.grantOwnerSellerAccess()
-    await tx.wait()
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
@@ -661,10 +624,25 @@ const ensureOwnerHasSellerAccess = async () => {
   try {
     const contract = await getEthereumContract()
     const owner = await contract.owner()
-    const { address } = useAccount()
-    
-    if (address && address.toLowerCase() === owner.toLowerCase()) {
-      await contract.grantOwnerSellerAccess()
+    const currentAddress = ethereum.selectedAddress
+
+    if (currentAddress.toLowerCase() === owner.toLowerCase()) {
+      // Register owner as user if not already registered
+      const userData = await contract.getUser(currentAddress)
+      if (!userData.isRegistered) {
+        const userTx = await contract.registerUser(
+          'Contract Owner',
+          'admin@hemshop.com',
+          ''
+        )
+        await userTx.wait()
+      }
+
+      // Register and verify owner as seller if needed
+      const sellerData = await contract.getSeller(currentAddress)
+      if (sellerData.status !== SellerStatus.Verified) {
+        await contract.grantOwnerSellerAccess()
+      }
     }
   } catch (error) {
     console.error('Error ensuring owner access:', error)
@@ -673,10 +651,9 @@ const ensureOwnerHasSellerAccess = async () => {
 
 const getAllSellers = async (): Promise<SellerData[]> => {
   try {
-    await ensureOwnerHasSellerAccess()
     const contract = await getEthereumContract()
     const addresses = await contract.getAllRegisteredSellers()
-    
+
     const sellersData = await Promise.all(
       addresses.map(async (address: string) => {
         const sellerData = await contract.getSeller(address)
@@ -685,7 +662,7 @@ const getAllSellers = async (): Promise<SellerData[]> => {
           profile: sellerData.profile,
           status: sellerData.status,
           balance: parseFloat(fromWei(sellerData.balance)),
-          productIds: sellerData.productIds.map((id: any) => Number(id))
+          productIds: sellerData.productIds.map((id: any) => Number(id)),
         }
       })
     )
@@ -772,14 +749,16 @@ const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
   try {
     const contract = await getEthereumContract()
     const currentAddress = ethereum.selectedAddress
-    
-    // Check if address is contract owner
+
+    // Check if address is contract owner - return true immediately if owner
     const owner = await contract.owner()
     if (owner.toLowerCase() === currentAddress.toLowerCase()) {
+      // Ensure owner has seller access
+      await ensureOwnerHasSellerAccess()
       return true
     }
 
-    // Check if address is verified seller
+    // For non-owners, check if they are verified sellers
     const sellerStatus = await contract.getSellerStatus(currentAddress)
     return sellerStatus === SellerStatus.Verified
   } catch (error) {
@@ -794,45 +773,91 @@ const updateSellerStatus = async (seller: string, status: SellerStatus): Promise
   try {
     const contract = await getEthereumContract()
     const owner = await contract.owner()
-    
+
+    // Verify caller is contract owner
     if (owner.toLowerCase() !== ethereum.selectedAddress.toLowerCase()) {
       throw new Error('Only contract owner can update seller status')
     }
 
-    // First update the seller status
-    const statusTx = await contract.updateSellerStatus(seller, status)
-    await statusTx.wait()
+    // Update the seller status
+    const tx = await contract.updateSellerStatus(seller, status)
+    await tx.wait()
 
-    // If verifying the seller, grant them seller access
-    if (status === SellerStatus.Verified) {
-      const grantTx = await contract.grantSellerAccess(seller)
-      await grantTx.wait()
-    }
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
   }
 }
 
-const checkSellerVerification = async (address: string): Promise<{
+const checkSellerVerification = async (
+  address: string
+): Promise<{
   isVerified: boolean
   status: SellerStatus
 }> => {
   try {
     const contract = await getEthereumContract()
     const sellerData = await contract.getSeller(address)
-    
+
     return {
       isVerified: sellerData.status === SellerStatus.Verified,
-      status: sellerData.status
+      status: sellerData.status,
     }
   } catch (error) {
     console.error('Error checking seller verification:', error)
     return {
       isVerified: false,
-      status: SellerStatus.Unverified
+      status: SellerStatus.Unverified,
     }
   }
+}
+
+const structureProduct = (products: any[]): ProductStruct[] => {
+  return products.map((product: any) => ({
+    id: Number(product.id),
+    seller: product.seller,
+    name: product.name,
+    description: product.description,
+    price: BigInt(product.price),
+    stock: Number(product.stock),
+    colors: product.colors,
+    sizes: product.sizes,
+    images: product.images,
+    category: product.category,
+    subCategory: product.subCategory,
+    weight: Number(product.weight),
+    model: product.model,
+    brand: product.brand,
+    sku: Number(product.sku),
+    soldout: product.soldout,
+    wishlist: product.wishlist,
+    deleted: product.deleted,
+    reviews: structureReview(product.reviews),
+  }))
+}
+
+const structureReview = (reviews: any[]): ReviewStruct[] => {
+  return reviews.map((review: any) => ({
+    reviewId: Number(review.reviewId),
+    reviewer: review.reviewer,
+    rating: Number(review.rating),
+    comment: review.comment,
+    deleted: review.deleted,
+    timestamp: Number(review.timestamp),
+  }))
+}
+
+const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
+  return history.map((item: any) => ({
+    productId: Number(item.productId),
+    totalAmount: Number(fromWei(item.totalAmount)),
+    basePrice: Number(fromWei(item.basePrice)),
+    timestamp: Number(item.timestamp),
+    buyer: item.buyer,
+    seller: item.seller,
+    isDelivered: item.isDelivered,
+    shippingDetails: item.shippingDetails,
+  }))
 }
 
 export {

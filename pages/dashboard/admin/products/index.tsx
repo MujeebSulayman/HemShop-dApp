@@ -97,7 +97,7 @@ const AdminProducts = () => {
         status: 'active',
         createdAt: new Date().toISOString(),
       }))
-      setProducts(formattedProducts as Product[])
+      setProducts(formattedProducts as unknown as Product[])
     } catch (error) {
       console.error('Error fetching products:', error)
       toast.error('Failed to fetch products')

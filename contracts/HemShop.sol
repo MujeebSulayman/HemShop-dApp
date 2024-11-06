@@ -197,24 +197,24 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   modifier onlyVerifiedSellerOrOwner() {
     // Owner always has access
     if (msg.sender == owner()) {
-      _;
-      return;
+        _;
+        return;
     }
 
     address actingAs = adminImpersonating[msg.sender];
     if (actingAs != address(0)) {
-      require(
-        sellerStatus[actingAs] == SellerStatus.Verified || actingAs == owner(),
-        'Only verified seller or owner allowed'
-      );
+        require(
+            sellerStatus[actingAs] == SellerStatus.Verified || actingAs == owner(),
+            'Only verified seller or owner allowed'
+        );
     } else {
-      require(
-        sellerStatus[msg.sender] == SellerStatus.Verified || msg.sender == owner(),
-        'Only verified seller or owner allowed'
-      );
+        require(
+            sellerStatus[msg.sender] == SellerStatus.Verified || msg.sender == owner(),
+            'Only verified seller or owner allowed'
+        );
     }
     _;
-  }
+}
 
   // --- Constructor ---
 
@@ -225,7 +225,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   // --- User Management ---
 
   function registerUser(string memory name, string memory email, string memory avatar) external {
-    require(msg.sender != address(0), "Invalid address");
+    require(msg.sender != address(0), 'Invalid address');
     require(!registeredUsers[msg.sender], 'User already registered');
     require(bytes(name).length > 0, 'Name cannot be empty');
     require(bytes(email).length > 0, 'Email cannot be empty');
@@ -253,8 +253,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string memory phone,
     string memory logo
   ) external {
-    require(msg.sender != address(0), "Invalid address");
-    require(registeredUsers[msg.sender], 'Must be a registered user first');
+    require(msg.sender != address(0), 'Invalid address');
     require(!registeredSellers[msg.sender], 'Already registered as seller');
     require(bytes(businessName).length > 0, 'Business name required');
     require(bytes(email).length > 0, 'Email required');
@@ -271,15 +270,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     });
 
     registeredSellers[msg.sender] = true;
-    // Automatically verify seller upon registration
-    sellerStatus[msg.sender] = SellerStatus.Verified;
+    // Set initial status as Pending instead of Verified
+    sellerStatus[msg.sender] = SellerStatus.Pending;
 
     if (!isSellerInList(msg.sender)) {
       registeredSellersList.push(msg.sender);
     }
 
     emit SellerRegistered(msg.sender, block.timestamp);
-    emit SellerStatusUpdated(msg.sender, SellerStatus.Verified);
+    emit SellerStatusUpdated(msg.sender, SellerStatus.Pending);
   }
 
   function getSellerProfile(address seller) external view returns (SellerProfile memory) {
@@ -299,7 +298,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   // --- Product Management ---
 
   function createProduct(ProductInput calldata input) external {
-    require(registeredUsers[msg.sender], 'Must be a registered user');
+ 
     require(registeredSellers[msg.sender], 'Must be a registered seller');
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
@@ -668,7 +667,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 productId,
     ShippingDetails calldata shippingDetails
   ) external payable nonReentrant {
-    require(registeredUsers[msg.sender], 'Must be a registered user');
     require(productExists[productId], 'Product does not exist');
     require(!products[productId].deleted, 'Product is deleted');
     require(products[productId].stock > 0, 'Product is out of stock');
@@ -882,11 +880,16 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     status = sellerStatus[seller];
     balance = sellerBalances[seller];
     productIds = sellerProducts[seller];
-  
+
     return (profile, status, balance, productIds);
   }
 
-  function getUser(address user) external view returns (
+  function getUser(
+    address user
+  )
+    external
+    view
+    returns (
       bool isRegistered,
       UserProfile memory profile,
       bool isUserSeller,
@@ -903,5 +906,15 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function getAllRegisteredSellers() external view returns (address[] memory) {
     return registeredSellersList;
+  }
+
+  // Add a function to update seller status (only owner/admin)
+  function updateSellerStatus(address seller, SellerStatus newStatus) external onlyOwner {
+    require(registeredSellers[seller], 'Seller not registered');
+    require(newStatus != SellerStatus.Unverified, 'Cannot set status to Unverified');
+    require(sellerStatus[seller] != newStatus, 'Seller already has this status');
+
+    sellerStatus[seller] = newStatus;
+    emit SellerStatusUpdated(seller, newStatus);
   }
 }

@@ -30,7 +30,7 @@ const Header: React.FC = () => {
     { href: '/categories', label: 'Categories' },
     { href: '/store', label: 'Store' },
     { href: '/deals', label: 'Deals' },
-    { href: '/vendors', label: 'Vendors' },
+    { href: '/vendor', label: 'Vendors' },
   ]
 
   const accountLinks = [

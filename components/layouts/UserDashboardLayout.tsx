@@ -106,9 +106,9 @@ const UserDashboardLayout = ({ children }: UserDashboardLayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
+      <div className={`flex-1 transition-all duration-300 ease-in-out transform ${isCollapsed ? 'ml-20' : 'ml-64'}`}>
         {/* Header */}
-        <header className="h-16 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6 fixed w-full z-10 top-0">
+        <header className="h-16 bg-gray-800 border-b  border-gray-700 flex items-center justify-between px-6 fixed w-full z-10 top-0">
           <div className="flex items-center flex-1">
             <input
               type="search"

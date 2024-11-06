@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { getProduct, getReviews } from '@/services/blockchain'
+import { fromWei, getProduct, getReviews } from '@/services/blockchain'
 import { ProductStruct, ReviewStruct } from '@/utils/type.dt'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
@@ -18,6 +18,7 @@ import {
   FiRefreshCw,
 } from 'react-icons/fi'
 import ReviewForm from '@/components/ReviewForm'
+import { ethers } from 'ethers'
 
 const ProductDetails = () => {
   const router = useRouter()
@@ -188,13 +189,15 @@ const ProductDetails = () => {
                     <span className="ml-2 text-sm text-gray-400">({reviews.length} reviews)</span>
                   </div>
                   <span className="text-sm text-gray-400">•</span>
-                  <span className="text-sm text-gray-400">{product.stock} in stock</span>
+                  <span className="text-sm text-gray-400">{product.stock} available</span>
                 </div>
               </div>
 
               {/* Price Section */}
               <div className="flex items-baseline gap-4 py-4 border-y border-gray-800">
-                <span className="text-3xl font-bold text-white">{product.price} ETH</span>
+                <span className="text-3xl font-bold text-white">
+                  {Number(ethers.formatUnits(product.price, 18)).toFixed(4)} ETH
+                </span>
                 {Number(product.stock) > 0 ? (
                   <span className="text-sm text-green-400 flex items-center gap-1">
                     <FiPackage className="w-4 h-4" />
@@ -206,6 +209,14 @@ const ProductDetails = () => {
                     Out of Stock
                   </span>
                 )}
+              </div>
+
+              <div className="flex items-baseline gap-4 py-4 border-y border-gray-800">
+                <span className="text-sm text-gray-400">•</span>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/vendor/${product.seller}`)}>
+                  <span className="text-sm text-gray-400">Seller:</span>
+                  <span className="text-sm text-gray-400">{product.seller}</span>
+                </div>
               </div>
 
               {/* Product Options */}

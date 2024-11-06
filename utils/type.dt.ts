@@ -13,6 +13,7 @@ export interface ProductParams {
   model: string
   brand: string
   sku: string | number
+  seller: string
 }
 
 export interface ProductStruct {
@@ -60,6 +61,7 @@ export interface CategoryStruct {
   name: string
   isActive: boolean
   subCategoryIds: number[]
+  subCategories?: SubCategoryStruct[]
 }
 
 export interface SubCategoryStruct {
@@ -136,7 +138,7 @@ export interface ProductInput {
   weight: number
   model: string
   brand: string
-  sku: number
+  sku: number | string
 }
 
 // Update ProductInput interface to match the form
@@ -153,7 +155,8 @@ export interface ProductInput {
   weight: number
   model: string
   brand: string
-  sku: number
+  sku: number | string
+  seller: string
 }
 
 // Update ProductStruct to match
@@ -219,7 +222,8 @@ export interface ProductInput {
   weight: number
   model: string
   brand: string
-  sku: number
+  sku: number |string
+  seller: string
 }
 
 // Add missing event types used in blockchain.tsx
@@ -333,5 +337,5 @@ export interface SellerData {
   profile: SellerProfile
   status: SellerStatus
   balance: number
-  productIds: number[]
+  productIds?: number[]
 }

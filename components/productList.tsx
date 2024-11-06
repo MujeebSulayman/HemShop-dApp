@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { getProducts, getReviews } from '@/services/blockchain'
 import { ProductStruct, ReviewStruct } from '@/utils/type.dt'
-import { FiStar, FiPackage, FiTruck, FiShoppingCart, FiHeart, FiSearch, FiSliders, FiGrid, FiList, FiX } from 'react-icons/fi'
+import { FiStar, FiHeart, FiSearch, FiSliders, FiGrid, FiList } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useRouter } from 'next/router'
+import { ethers } from 'ethers'
 
 const ProductList = () => {
   const router = useRouter()
@@ -268,7 +269,7 @@ const ProductList = () => {
                   {/* Price */}
                   <div className="flex items-center justify-between pt-2">
                     <p className="text-xl font-bold text-white">
-                      {product.price} <span className="text-indigo-400 text-base font-normal">ETH</span>
+                      {Number(ethers.formatUnits(product.price, 18)).toFixed(4)} <span className="text-indigo-400 text-base font-normal">ETH</span>
                     </p>
                   </div>
                 </div>

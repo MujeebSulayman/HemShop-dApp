@@ -126,7 +126,8 @@ const Create = () => {
     if (selectedCategoryId) {
       const selectedCategory = categories.find((cat) => cat.id === selectedCategoryId)
       if (selectedCategory) {
-        setSubCategories(selectedCategory.subCategories || [])
+        const subCats = selectedCategory.subCategories || []
+        setSubCategories(subCats.filter((sub): sub is SubCategoryStruct => sub !== null))
       } else {
         setSubCategories([])
       }
@@ -146,7 +147,7 @@ const Create = () => {
       setProduct((prev) => ({
         ...prev,
         categoryId: numValue,
-        subCategoryId: 0, // Reset subcategory when category changes
+        subCategoryId: 0,
       }))
       return
     }
@@ -176,15 +177,18 @@ const Create = () => {
     }
 
     const validationErrors: { [key: string]: string } = {}
-    
+
     if (!product.name.trim()) validationErrors.name = 'Name is required'
     if (!product.description.trim()) validationErrors.description = 'Description is required'
-    if (!product.price || Number(product.price) <= 0) validationErrors.price = 'Valid price is required'
-    if (!product.stock || Number(product.stock) <= 0) validationErrors.stock = 'Valid stock is required'
+    if (!product.price || Number(product.price) <= 0)
+      validationErrors.price = 'Valid price is required'
+    if (!product.stock || Number(product.stock) <= 0)
+      validationErrors.stock = 'Valid stock is required'
     if (!product.images.length) validationErrors.images = 'At least one image is required'
     if (!product.categoryId) validationErrors.categoryId = 'Category is required'
     if (!product.subCategoryId) validationErrors.subCategoryId = 'Subcategory is required'
-    if (!product.weight || Number(product.weight) <= 0) validationErrors.weight = 'Valid weight is required'
+    if (!product.weight || Number(product.weight) <= 0)
+      validationErrors.weight = 'Valid weight is required'
     if (!product.colors?.length) validationErrors.colors = 'At least one color is required'
 
     if (Object.keys(validationErrors).length > 0) {
@@ -199,7 +203,7 @@ const Create = () => {
         ...product,
         seller: address,
       })
-      
+
       toast.success('Product created successfully!')
       resetForm()
     } catch (error: any) {
@@ -483,7 +487,6 @@ const Create = () => {
                 <p className="mt-1 text-sm text-gray-400">Unique identifier for your product</p>
               </div>
 
-             
               <div>
                 <label htmlFor="colors" className="block text-sm font-medium text-gray-300 mb-1.5">
                   Colors*

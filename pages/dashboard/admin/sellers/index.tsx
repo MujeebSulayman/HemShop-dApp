@@ -80,21 +80,7 @@ const AdminSellers = () => {
     <div className="p-6 max-w-[1600px] mx-auto">
       {/* Header Section */}
       <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Sellers Management</h1>
-            <p className="text-gray-400">Manage and monitor all sellers on the platform</p>
-          </div>
-          <Link 
-            href="/dashboard/admin/seller-verification"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500 
-              text-white rounded-xl hover:bg-indigo-600 transition-colors"
-          >
-            <Users className="w-4 h-4" />
-            Verify Sellers
-            <ArrowUpRight className="w-4 h-4" />
-          </Link>
-        </div>
+        <div className="flex justify-between items-start"></div>
       </div>
 
       {/* Stats Overview */}
@@ -184,7 +170,96 @@ const AdminSellers = () => {
         </div>
       </div>
 
-      
+      {/* Sellers Table */}
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-900/50">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm text-gray-400">Business Name</th>
+                <th className="px-6 py-4 text-left text-sm text-gray-400">Email</th>
+                <th className="px-6 py-4 text-left text-sm text-gray-400">Status</th>
+                <th className="px-6 py-4 text-left text-sm text-gray-400">Balance</th>
+                <th className="px-6 py-4 text-left text-sm text-gray-400">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700/50">
+              {filteredSellers.map((seller) => (
+                <tr key={seller.address} className="hover:bg-gray-700/20">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      {seller.profile.logo && (
+                        <img 
+                          src={seller.profile.logo} 
+                          alt={seller.profile.businessName}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      )}
+                      <div>
+                        <p className="text-white font-medium">{seller.profile.businessName}</p>
+                        <p className="text-sm text-gray-400">{seller.address}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-gray-300">{seller.profile.email}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      seller.status === SellerStatus.Verified ? 'bg-green-500/20 text-green-400' :
+                      seller.status === SellerStatus.Pending ? 'bg-yellow-500/20 text-yellow-400' :
+                      seller.status === SellerStatus.Suspended ? 'bg-red-500/20 text-red-400' :
+                      'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {SellerStatus[seller.status]}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-300">
+                    {seller.balance?.toFixed(4)} ETH
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      {seller.status === SellerStatus.Pending && (
+                        <button
+                          onClick={() => handleUpdateStatus(seller.address, SellerStatus.Verified)}
+                          disabled={updating === seller.address}
+                          className="px-3 py-1 text-sm bg-green-500/20 text-green-400 
+                            rounded-lg hover:bg-green-500/30 transition-colors"
+                        >
+                          {updating === seller.address ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Verify'
+                          )}
+                        </button>
+                      )}
+                      {seller.status === SellerStatus.Verified && (
+                        <button
+                          onClick={() => handleUpdateStatus(seller.address, SellerStatus.Suspended)}
+                          disabled={updating === seller.address}
+                          className="px-3 py-1 text-sm bg-red-500/20 text-red-400 
+                            rounded-lg hover:bg-red-500/30 transition-colors"
+                        >
+                          {updating === seller.address ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Suspend'
+                          )}
+                        </button>
+                      )}
+                      <Link
+                        href={`/dashboard/admin/sellers/${seller.address}`}
+                        className="p-1.5 text-gray-400 hover:text-white 
+                          hover:bg-gray-700/50 rounded-lg transition-colors"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }

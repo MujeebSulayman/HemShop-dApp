@@ -16,6 +16,11 @@ import {
   FiChevronDown,
   FiX,
   FiRefreshCw,
+  FiAlignCenter,
+  FiBold,
+  FiItalic,
+  FiList,
+  FiUnderline,
 } from 'react-icons/fi'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
 
@@ -55,6 +60,12 @@ const Create = () => {
   const [subCategories, setSubCategories] = useState<SubCategoryStruct[]>([])
 
   const [colorInput, setColorInput] = useState('')
+
+  const [isBold, setIsBold] = useState(false)
+  const [isItalic, setIsItalic] = useState(false)
+  const [isUnderline, setIsUnderline] = useState(false)
+  const [isCenter, setIsCenter] = useState(false)
+  const [isList, setIsList] = useState(false)
 
   const handleAddColor = () => {
     if (!colorInput.trim()) {
@@ -266,6 +277,52 @@ const Create = () => {
     }))
   }
 
+  const handleToolbarClick = (type: string) => {
+    const textarea = document.getElementById('description') as HTMLTextAreaElement
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selectedText = textarea.value.substring(start, end)
+
+    let newText = ''
+    let newStart = start
+    let newEnd = end
+
+    switch (type) {
+      case 'bold':
+        newText = `**${selectedText}**`
+        setIsBold(!isBold)
+        break
+      case 'italic':
+        newText = `_${selectedText}_`
+        setIsItalic(!isItalic)
+        break
+      case 'underline':
+        newText = `__${selectedText}__`
+        setIsUnderline(!isUnderline)
+        break
+      case 'center':
+        newText = `<center>${selectedText}</center>`
+        setIsCenter(!isCenter)
+        break
+      case 'list':
+        newText = `\n- ${selectedText}`
+        setIsList(!isList)
+        break
+      default:
+        return
+    }
+
+    const updatedText = textarea.value.substring(0, start) + newText + textarea.value.substring(end)
+    setProduct(prev => ({ ...prev, description: updatedText }))
+
+    // Update cursor position
+    newEnd = start + newText.length
+    setTimeout(() => {
+      textarea.focus()
+      textarea.setSelectionRange(newStart, newEnd)
+    }, 0)
+  }
+
   return (
     <div className="min-h-screen pt-24 bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -352,21 +409,76 @@ const Create = () => {
                 >
                   Description*
                 </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={product.description}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-800/50 border border-gray-600
-                    focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
-                    text-white placeholder-gray-400
-                    transition-all duration-200 ease-in-out
-                    hover:border-gray-500
-                    resize-none"
-                  placeholder="Enter product description"
-                  required
-                />
+                <div className="space-y-2">
+                  <div className="flex gap-2 p-2 bg-gray-800/30 rounded-t-xl border border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => handleToolbarClick('bold')}
+                      className={`p-2 rounded ${
+                        isBold ? 'bg-gray-700 text-blue-400' : 'hover:bg-gray-700/50 text-gray-400'
+                      }`}
+                      title="Bold"
+                    >
+                      <FiBold className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToolbarClick('italic')}
+                      className={`p-2 rounded ${
+                        isItalic ? 'bg-gray-700 text-blue-400' : 'hover:bg-gray-700/50 text-gray-400'
+                      }`}
+                      title="Italic"
+                    >
+                      <FiItalic className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToolbarClick('underline')}
+                      className={`p-2 rounded ${
+                        isUnderline ? 'bg-gray-700 text-blue-400' : 'hover:bg-gray-700/50 text-gray-400'
+                      }`}
+                      title="Underline"
+                    >
+                      <FiUnderline className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-6 bg-gray-700 my-auto mx-1" />
+                    <button
+                      type="button"
+                      onClick={() => handleToolbarClick('center')}
+                      className={`p-2 rounded ${
+                        isCenter ? 'bg-gray-700 text-blue-400' : 'hover:bg-gray-700/50 text-gray-400'
+                      }`}
+                      title="Center"
+                    >
+                      <FiAlignCenter className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleToolbarClick('list')}
+                      className={`p-2 rounded ${
+                        isList ? 'bg-gray-700 text-blue-400' : 'hover:bg-gray-700/50 text-gray-400'
+                      }`}
+                      title="Bullet List"
+                    >
+                      <FiList className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={product.description}
+                    onChange={handleChange}
+                    rows={4}
+                    className="w-full px-4 py-2.5 rounded-b-xl bg-gray-800
+                      focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500
+                      text-white placeholder-gray-400
+                      transition-all duration-200 ease-in-out
+                      hover:border-gray-500
+                      resize-none"
+                    placeholder="Enter product description"
+                    required
+                  />
+                </div>
               </div>
             </div>
           </motion.div>

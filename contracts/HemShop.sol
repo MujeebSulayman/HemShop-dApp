@@ -197,24 +197,24 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   modifier onlyVerifiedSellerOrOwner() {
     // Owner always has access
     if (msg.sender == owner()) {
-        _;
-        return;
+      _;
+      return;
     }
 
     address actingAs = adminImpersonating[msg.sender];
     if (actingAs != address(0)) {
-        require(
-            sellerStatus[actingAs] == SellerStatus.Verified || actingAs == owner(),
-            'Only verified seller or owner allowed'
-        );
+      require(
+        sellerStatus[actingAs] == SellerStatus.Verified || actingAs == owner(),
+        'Only verified seller or owner allowed'
+      );
     } else {
-        require(
-            sellerStatus[msg.sender] == SellerStatus.Verified || msg.sender == owner(),
-            'Only verified seller or owner allowed'
-        );
+      require(
+        sellerStatus[msg.sender] == SellerStatus.Verified || msg.sender == owner(),
+        'Only verified seller or owner allowed'
+      );
     }
     _;
-}
+  }
 
   // --- Constructor ---
 
@@ -298,8 +298,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   // --- Product Management ---
 
   function createProduct(ProductInput calldata input) external {
- 
-    require(registeredSellers[msg.sender], 'Must be a registered seller');
+    require(
+      sellerStatus[msg.sender] == SellerStatus.Verified || msg.sender == owner(),
+      'Must be verified seller or owner'
+    );
+
     require(bytes(input.name).length > 0, 'Name cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');

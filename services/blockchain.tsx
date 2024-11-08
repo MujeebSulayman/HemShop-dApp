@@ -14,6 +14,7 @@ import {
   CategoryStruct,
   UserData,
   SellerData,
+  OrderDetails,
 } from '@/utils/type.dt'
 
 // Utility functions
@@ -173,12 +174,13 @@ const getSellerBalance = async (seller: string): Promise<number> => {
 const buyProduct = async (
   productId: number,
   shippingDetails: ShippingDetails,
-  price: number
+  price: number,
+  orderDetails: OrderDetails
 ): Promise<void> => {
-  if (!ethereum) throw new Error('No wallet provider found')
+  if (!ethereum) throw new Error('No wallet provider found');
 
   try {
-    const contract = await getEthereumContract()
+    const contract = await getEthereumContract();
 
     // Validate shipping details
     const requiredFields = [
@@ -190,21 +192,26 @@ const buyProduct = async (
       'postalCode',
       'phone',
       'email',
-    ]
+    ];
 
     for (const field of requiredFields) {
       if (!shippingDetails[field as keyof ShippingDetails]) {
-        throw new Error(`Missing required field: ${field}`)
+        throw new Error(`Missing required field: ${field}`);
       }
     }
 
-    const tx = await contract.buyProduct(productId, shippingDetails, { value: toWei(price) })
-    await tx.wait()
+    const tx = await contract.buyProduct(
+      productId, 
+      shippingDetails, 
+      orderDetails, 
+      { value: toWei(price) }
+    );
+    await tx.wait();
   } catch (error) {
-    console.error('Buy product error:', error)
-    throw error
+    console.error('Buy product error:', error);
+    throw error;
   }
-}
+};
 
 const getSellerPurchaseHistory = async (seller: string): Promise<PurchaseHistoryStruct[]> => {
   const contract = await getEthereumContract()
@@ -586,11 +593,7 @@ const registerAndVerifyContractOwner = async (): Promise<void> => {
     // Register owner as user first if not already registered
     const userData = await contract.getUser(currentAddress)
     if (!userData.isRegistered) {
-      const userTx = await contract.registerUser(
-        'Contract Owner',
-        'admin@hemshop.com',
-        ''
-      )
+      const userTx = await contract.registerUser('Contract Owner', 'admin@hemshop.com', '')
       await userTx.wait()
     }
 
@@ -613,7 +616,6 @@ const registerAndVerifyContractOwner = async (): Promise<void> => {
       const statusTx = await contract.updateSellerStatus(currentAddress, SellerStatus.Verified)
       await statusTx.wait()
     }
-
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
@@ -630,11 +632,7 @@ const ensureOwnerHasSellerAccess = async () => {
       // Register owner as user if not already registered
       const userData = await contract.getUser(currentAddress)
       if (!userData.isRegistered) {
-        const userTx = await contract.registerUser(
-          'Contract Owner',
-          'admin@hemshop.com',
-          ''
-        )
+        const userTx = await contract.registerUser('Contract Owner', 'admin@hemshop.com', '')
         await userTx.wait()
       }
 
@@ -782,7 +780,6 @@ const updateSellerStatus = async (seller: string, status: SellerStatus): Promise
     // Update the seller status
     const tx = await contract.updateSellerStatus(seller, status)
     await tx.wait()
-
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
@@ -853,10 +850,19 @@ const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
     totalAmount: Number(safeFromWei(item.totalAmount)),
     basePrice: Number(safeFromWei(item.basePrice)),
     timestamp: Number(item.timestamp),
+    lastUpdated: Number(item.lastUpdated || item.timestamp),
     buyer: item.buyer,
     seller: item.seller,
     isDelivered: item.isDelivered,
     shippingDetails: item.shippingDetails,
+    orderDetails: {
+      name: item.orderDetails?.name || item.name || '',
+      images: item.orderDetails?.images || item.images || [],
+      selectedColor: item.orderDetails?.selectedColor || item.selectedColor || '',
+      selectedSize: item.orderDetails?.selectedSize || item.selectedSize || '',
+      quantity: Number(item.orderDetails?.quantity) || Number(item.quantity) || 1,
+      price: Number(safeFromWei(item.orderDetails?.price || item.price || '0')),
+    },
   }))
 }
 
@@ -871,6 +877,37 @@ const safeFromWei = (value: string | number | bigint): string => {
   } catch (error) {
     console.error('Error converting value:', error)
     return '0'
+  }
+}
+
+const markOrderDelivered = async (productId: number, buyerAddress: string): Promise<void> => {
+  if (!ethereum) throw new Error('No wallet provider found')
+
+  try {
+    const contract = await getEthereumContract()
+    const tx = await contract.markPurchaseDelivered(productId, buyerAddress)
+    await tx.wait()
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getAllOrders = async (): Promise<PurchaseHistoryStruct[]> => {
+  try {
+    const contract = await getEthereumContract()
+    const sellers = await contract.getAllRegisteredSellers()
+    let allOrders: PurchaseHistoryStruct[] = []
+
+    for (const seller of sellers) {
+      const sellerOrders = await contract.getSellerPurchaseHistory(seller)
+      allOrders = [...allOrders, ...structurePurchaseHistory(sellerOrders)]
+    }
+
+    return allOrders
+  } catch (error) {
+    reportError(error)
+    return []
   }
 }
 
@@ -919,4 +956,6 @@ export {
   isOwnerOrVerifiedSeller,
   checkSellerVerification,
   safeFromWei,
+  markOrderDelivered,
+  getAllOrders,
 }

@@ -213,7 +213,7 @@ const ProductDetails = () => {
 
               <div className="flex items-baseline gap-4 py-4 border-y border-gray-800">
                 <span className="text-sm text-gray-400">•</span>
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/vendor/${product.seller}`)}>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/dashboard/user/${product.seller}`)}>
                   <span className="text-sm text-gray-400">Seller:</span>
                   <span className="text-sm text-gray-400">{product.seller}</span>
                 </div>

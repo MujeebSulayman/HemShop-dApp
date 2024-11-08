@@ -91,6 +91,15 @@ export interface ShippingDetails {
   email: string
 }
 
+export interface OrderDetails {
+  name: string
+  images: string[]
+  selectedColor: string
+  selectedSize: string
+  quantity: number
+  price: number
+}
+
 export interface PurchaseHistoryStruct {
   productId: number
   totalAmount: number
@@ -100,13 +109,14 @@ export interface PurchaseHistoryStruct {
   seller: string
   isDelivered: boolean
   shippingDetails: ShippingDetails
+  orderDetails: OrderDetails
 }
 
 export enum SellerStatus {
   Unverified = 0,
   Pending = 1,
   Verified = 2,
-  Suspended = 3
+  Suspended = 3,
 }
 
 // Add contract event types
@@ -139,9 +149,10 @@ export interface ProductInput {
   model: string
   brand: string
   sku: number | string
+  seller: string
 }
 
-// Update ProductInput interface to match the form
+// Consolidated ProductInput interface
 export interface ProductInput {
   name: string
   description: string
@@ -159,7 +170,7 @@ export interface ProductInput {
   seller: string
 }
 
-// Update ProductStruct to match
+// Consolidated ProductStruct interface
 export interface ProductStruct {
   id: number
   seller: string
@@ -208,22 +219,24 @@ export interface SellerRegistrationParams {
   logo: string
 }
 
-// Update ProductInput to match createProduct function parameters
-export interface ProductInput {
+// Consolidated CategoryStruct interface
+export interface CategoryStruct {
+  id: number
   name: string
+  isActive: boolean
+  subCategoryIds: number[]
+  subCategories?: SubCategoryStruct[]
+}
+
+// Consolidated SellerProfile interface
+export interface SellerProfile {
+  businessName: string
   description: string
-  price: number
-  stock: number
-  colors: string[]
-  sizes: string[]
-  images: string[]
-  categoryId: number
-  subCategoryId: number
-  weight: number
-  model: string
-  brand: string
-  sku: number |string
-  seller: string
+  email: string
+  phone: string
+  logo: string
+  registeredAt: number
+  termsAccepted: boolean
 }
 
 // Add missing event types used in blockchain.tsx
@@ -234,7 +247,7 @@ export interface ContractEvent {
   timestamp: number
 }
 
-// Update PurchaseHistoryStruct to match blockchain service
+// Consolidated PurchaseHistoryStruct interface
 export interface PurchaseHistoryStruct {
   productId: number
   totalAmount: number
@@ -244,6 +257,7 @@ export interface PurchaseHistoryStruct {
   seller: string
   isDelivered: boolean
   shippingDetails: ShippingDetails
+  orderDetails: OrderDetails
 }
 
 // Update ReviewStruct to match blockchain service
@@ -256,31 +270,12 @@ export interface ReviewStruct {
   timestamp: number
 }
 
-// Add missing CategoryStruct interface
-export interface CategoryStruct {
-  id: number
-  name: string
-  isActive: boolean
-  subCategoryIds: number[]
-}
-
 // Update SubCategoryStruct to match blockchain service
 export interface SubCategoryStruct {
   id: number
   name: string
   parentCategoryId: number
   isActive: boolean
-}
-
-// Update SellerProfile to match blockchain service
-export interface SellerProfile {
-  businessName: string
-  description: string
-  email: string
-  phone: string
-  logo: string
-  registeredAt: number
-  termsAccepted: boolean
 }
 
 // Add missing SellerRegistrationParams
@@ -338,4 +333,51 @@ export interface SellerData {
   status: SellerStatus
   balance: number
   productIds?: number[]
+}
+
+export enum OrderStatus {
+  Pending = 'pending',
+  Delivered = 'delivered',
+  Cancelled = 'cancelled',
+}
+
+export interface OrderActionResult {
+  success: boolean
+  message: string
+  error?: any
+}
+
+export interface OrderDetails {
+  name: string
+  images: string[]
+  selectedColor: string
+  selectedSize: string
+  quantity: number
+  price: number
+}
+
+export interface PurchaseHistoryStruct {
+  productId: number
+  buyer: string
+  seller: string
+  totalAmount: number
+  timestamp: number
+  isDelivered: boolean
+  shippingDetails: ShippingDetails
+  orderDetails: OrderDetails
+  status?: OrderStatus
+  lastUpdated?: number
+  updatedBy?: string
+}
+
+export interface ShippingDetails {
+  fullName: string
+  email: string
+  phone: string
+  streetAddress: string
+  city: string
+  state: string
+  postalCode: string
+  country: string
+  deliveryInstructions?: string
 }

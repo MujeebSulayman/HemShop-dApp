@@ -106,19 +106,26 @@ const Checkout = () => {
       for (const item of cartItems) {
         const itemPrice = Number(safeFromWei(item.price)) * item.quantity
         
+        const orderDetails = {
+          name: item.name,
+          images: item.images,
+          selectedColor: item.selectedColor || '',
+          selectedSize: item.selectedSize || '',
+          quantity: item.quantity,
+          price: Number(safeFromWei(item.price))
+        }
+
         await buyProduct(
           Number(item.id),
           shippingDetails,
-          itemPrice
+          itemPrice,
+          orderDetails
         )
       }
 
-      // Clear cart and show success message
       clearCart()
       toast.success('Purchase successful! Check your profile for order details.')
-      
-      // Redirect to store page
-      router.push('/dashboard/user/purchases')
+      router.push('/dashboard/user/purchase')
     } catch (error: any) {
       console.error('Checkout error:', error)
       toast.error(error?.message || 'Failed to process purchase. Please try again.')
@@ -279,7 +286,7 @@ const Checkout = () => {
               {/* Cart Items */}
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex gap-4 pb-4 border-b border-gray-700/50">
+                  <div key={`${item.id}-${item.selectedColor}-${item.selectedSize}`} className="flex gap-4 pb-4 border-b border-gray-700/50">
                     <img
                       src={item.images[0] || '/placeholder.png'}
                       alt={item.name}
@@ -287,6 +294,18 @@ const Checkout = () => {
                     />
                     <div className="flex-1">
                       <h3 className="text-white font-medium line-clamp-1">{item.name}</h3>
+                      <div className="mt-1 space-y-1">
+                        {item.selectedColor && (
+                          <span className="text-xs text-gray-400 block">
+                            Color: {item.selectedColor}
+                          </span>
+                        )}
+                        {item.selectedSize && (
+                          <span className="text-xs text-gray-400 block">
+                            Size: {item.selectedSize}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-sm text-gray-400">Qty: {item.quantity}</span>
                         <span className="text-sm font-medium text-white">

@@ -240,7 +240,7 @@ const ProductList = () => {
                   </div>
 
                   {/* Product Name */}
-                  <h3 className="font-medium text-white line-clamp-2 min-h-[2.5rem]">
+                  <h3 className="font-medium text-white line-clamp-2">
                     {product.name}
                   </h3>
 
@@ -267,7 +267,7 @@ const ProductList = () => {
                   </div>
 
                   {/* Price */}
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center justify-between">
                     <p className="text-xl font-bold text-white">
                       {Number(ethers.formatUnits(product.price, 18)).toFixed(4)} <span className="text-indigo-400 text-base font-normal">ETH</span>
                     </p>

@@ -1,11 +1,11 @@
 import React from 'react'
 import { useCart } from '@/contexts/CartContext'
-import { FiMinus, FiPlus, FiTrash2 } from 'react-icons/fi'
+import { FiMinus, FiPlus } from 'react-icons/fi'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
-import { buyProduct, fromWei } from '@/services/blockchain'
+import { fromWei } from '@/services/blockchain'
 import { toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { useRouter } from 'next/router'
@@ -35,6 +35,8 @@ const Cart = () => {
     if (newQuantity < 1) return
     updateQuantity(productId.toString(), newQuantity)
   }
+
+
 
   const handleProceedToCheckout = () => {
     if (!address) {
@@ -96,20 +98,36 @@ const Cart = () => {
                 <div className="ml-4 flex flex-1 flex-col">
                   <div>
                     <div className="flex justify-between text-base font-medium text-white">
-                      <h3>{item.name}</h3>
-                      <div className="flex items-center">
+                      <div>
+                        <h3>{item.name}</h3>
+                        {item.selectedColor && (
+                          <p className="text-sm text-gray-400">Color: {item.selectedColor}</p>
+                        )}
+                        {item.selectedSize && (
+                          <p className="text-sm text-gray-400">Size: {item.selectedSize}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <button
+                            onClick={() => handleQuantityChange(Number(item.id), item.quantity - 1)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <FiMinus />
+                          </button>
+                          <span className="mx-2">{item.quantity}</span>
+                          <button
+                            onClick={() => handleQuantityChange(Number(item.id), item.quantity + 1)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <FiPlus />
+                          </button>
+                        </div>
                         <button
-                          onClick={() => handleQuantityChange(Number(item.id), item.quantity - 1)}
-                          className="text-gray-400 hover:text-white mr-2"
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-red-400 hover:text-red-500"
                         >
-                          <FiMinus />
-                        </button>
-                        <span>{item.quantity}</span>
-                        <button
-                          onClick={() => handleQuantityChange(Number(item.id), item.quantity + 1)}
-                          className="text-gray-400 hover:text-white ml-2"
-                        >
-                          <FiPlus />
+                          Remove
                         </button>
                       </div>
                     </div>

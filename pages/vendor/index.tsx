@@ -5,6 +5,7 @@ import { getAllSellers } from '@/services/blockchain'
 import { SellerData, SellerStatus } from '@/utils/type.dt'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { Search, Package, TrendingUp, Users, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 
 interface StatusCount {
   [SellerStatus.Unverified]: number

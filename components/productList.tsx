@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'
 import { useRouter } from 'next/router'
 import { ethers } from 'ethers'
+import Image from 'next/image'
 
 const ProductList = () => {
   const router = useRouter()
@@ -57,7 +58,7 @@ const ProductList = () => {
 
   // Filter handlers
   const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
+    setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleProductClick = (productId: string) => {
@@ -78,8 +79,8 @@ const ProductList = () => {
       <div className="mb-8 space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">Products</h1>
-          <button 
-            onClick={() => setShowFilters(prev => !prev)}
+          <button
+            onClick={() => setShowFilters((prev) => !prev)}
             className="lg:hidden flex items-center gap-2 text-gray-400 hover:text-white"
           >
             <FiSliders className="w-5 h-5" />
@@ -115,13 +116,17 @@ const ProductList = () => {
             <div className="flex items-center gap-2 bg-gray-800/50 rounded-xl p-1">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-indigo-500 text-white' : 'text-gray-400'}`}
+                className={`p-2 rounded-lg ${
+                  viewMode === 'grid' ? 'bg-indigo-500 text-white' : 'text-gray-400'
+                }`}
               >
                 <FiGrid className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-indigo-500 text-white' : 'text-gray-400'}`}
+                className={`p-2 rounded-lg ${
+                  viewMode === 'list' ? 'bg-indigo-500 text-white' : 'text-gray-400'
+                }`}
               >
                 <FiList className="w-5 h-5" />
               </button>
@@ -150,21 +155,36 @@ const ProductList = () => {
                     max="10"
                     step="0.1"
                     value={filters.priceRange[1]}
-                    onChange={(e) => handleFilterChange('priceRange', [filters.priceRange[0], parseFloat(e.target.value)])}
+                    onChange={(e) =>
+                      handleFilterChange('priceRange', [
+                        filters.priceRange[0],
+                        parseFloat(e.target.value),
+                      ])
+                    }
                     className="w-full"
                   />
                   <div className="flex items-center gap-4">
                     <input
                       type="number"
                       value={filters.priceRange[0]}
-                      onChange={(e) => handleFilterChange('priceRange', [parseFloat(e.target.value), filters.priceRange[1]])}
+                      onChange={(e) =>
+                        handleFilterChange('priceRange', [
+                          parseFloat(e.target.value),
+                          filters.priceRange[1],
+                        ])
+                      }
                       className="w-20 px-2 py-1 bg-gray-700 rounded-lg text-center"
                     />
                     <span className="text-gray-400">to</span>
                     <input
                       type="number"
                       value={filters.priceRange[1]}
-                      onChange={(e) => handleFilterChange('priceRange', [filters.priceRange[0], parseFloat(e.target.value)])}
+                      onChange={(e) =>
+                        handleFilterChange('priceRange', [
+                          filters.priceRange[0],
+                          parseFloat(e.target.value),
+                        ])
+                      }
                       className="w-20 px-2 py-1 bg-gray-700 rounded-lg text-center"
                     />
                   </div>
@@ -188,37 +208,39 @@ const ProductList = () => {
                   transition-all duration-300 cursor-pointer"
               >
                 {/* Product Image */}
-                <div className="relative aspect-square rounded-t-2xl overflow-hidden">
-                  <img
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
                     src={product.images[0] || '/placeholder.png'}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
-                  
+
                   {/* Wishlist Button - Prevent propagation to avoid triggering navigation */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      isInWishlist(product.id) 
-                        ? removeFromWishlist(product.id) 
+                      isInWishlist(product.id)
+                        ? removeFromWishlist(product.id)
                         : addToWishlist(product)
                     }}
                     className="absolute top-3 right-3 p-2 rounded-xl bg-white/10 backdrop-blur-md 
                       hover:bg-white/20 transition-colors duration-200"
                   >
-                    <FiHeart 
+                    <FiHeart
                       className={`w-5 h-5 ${
-                        isInWishlist(product.id) 
-                          ? 'fill-red-500 text-red-500' 
-                          : 'text-white'
-                      }`} 
+                        isInWishlist(product.id) ? 'fill-red-500 text-red-500' : 'text-white'
+                      }`}
                     />
                   </button>
 
                   {/* Stock Badge */}
                   {Number(product.stock) < 10 && (
-                    <div className="absolute top-3 left-3 px-3 py-1 rounded-lg text-xs font-medium 
-                      bg-red-500/10 text-red-400 backdrop-blur-md border border-red-500/10">
+                    <div
+                      className="absolute top-3 left-3 px-3 py-1 rounded-lg text-xs font-medium 
+                      bg-red-500/10 text-red-400 backdrop-blur-md border border-red-500/10"
+                    >
                       Only {product.stock} left
                     </div>
                   )}
@@ -240,9 +262,7 @@ const ProductList = () => {
                   </div>
 
                   {/* Product Name */}
-                  <h3 className="font-medium text-white line-clamp-2">
-                    {product.name}
-                  </h3>
+                  <h3 className="font-medium text-white line-clamp-2">{product.name}</h3>
 
                   {/* Stock Indicator */}
                   <div className="space-y-2">
@@ -253,10 +273,10 @@ const ProductList = () => {
                     <div className="h-1.5 w-full bg-gray-700/50 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
-                          Number(product.stock) < 10 
-                            ? 'bg-red-500' 
-                            : Number(product.stock) < 50 
-                            ? 'bg-yellow-500' 
+                          Number(product.stock) < 10
+                            ? 'bg-red-500'
+                            : Number(product.stock) < 50
+                            ? 'bg-yellow-500'
                             : 'bg-green-500'
                         }`}
                         style={{
@@ -269,7 +289,8 @@ const ProductList = () => {
                   {/* Price */}
                   <div className="flex items-center justify-between">
                     <p className="text-xl font-bold text-white">
-                      {Number(ethers.formatUnits(product.price, 18)).toFixed(4)} <span className="text-indigo-400 text-base font-normal">ETH</span>
+                      {Number(ethers.formatUnits(product.price, 18)).toFixed(4)}{' '}
+                      <span className="text-indigo-400 text-base font-normal">ETH</span>
                     </p>
                   </div>
                 </div>

@@ -11,6 +11,7 @@ import { Menu, Transition } from '@headlessui/react'
 import { FiChevronDown, FiUser, FiPackage, FiSettings } from 'react-icons/fi'
 import { useCart } from '@/contexts/CartContext'
 import { fromWei } from '@/services/blockchain'
+import Image from 'next/image'
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false)

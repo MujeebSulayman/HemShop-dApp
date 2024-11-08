@@ -4,6 +4,7 @@ import { getSellerProducts, getSeller } from '@/services/blockchain'
 import { ProductStruct, ReviewStruct, SellerData } from '@/utils/type.dt'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { Package, MapPin, Mail, Phone, Star, Filter, Search, Grid, List } from 'lucide-react'
+import Image from 'next/image'
 
 const calculateAverageRating = (reviews: ReviewStruct[]): number => {
   const activeReviews = reviews.filter((review) => !review.deleted)

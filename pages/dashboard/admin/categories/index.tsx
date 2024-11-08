@@ -474,7 +474,7 @@ const CategoriesManagement = () => {
                   </button>
                 </div>
               </div>
-              {category.subCategories.length > 0 && (
+              {category.subCategories && category.subCategories.length > 0 && (
                 <div className="ml-4 pl-4 border-l border-gray-600">
                   <h4 className="text-sm text-gray-400 mb-2">Subcategories:</h4>
                   <div className="space-y-2">

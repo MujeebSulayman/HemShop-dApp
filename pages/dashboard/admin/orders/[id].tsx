@@ -1,5 +1,5 @@
 import withAdminLayout from '@/components/hoc/withAdminLayout'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useAccount } from 'wagmi'
 import { PurchaseHistoryStruct, OrderStatus } from '@/utils/type.dt'
@@ -16,13 +16,7 @@ const AdminOrderDetail = () => {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
 
-  useEffect(() => {
-    if (id) {
-      fetchOrder()
-    }
-  }, [id])
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       setLoading(true)
       const orders = await getAllOrders()
@@ -38,7 +32,11 @@ const AdminOrderDetail = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    fetchOrder()
+  }, [fetchOrder])
 
   const handleUpdateStatus = async () => {
     if (!order || !address) return

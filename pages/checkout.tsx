@@ -102,24 +102,19 @@ const Checkout = () => {
 
     setIsSubmitting(true)
     try {
-      // Process each item in the cart
       for (const item of cartItems) {
         const itemPrice = Number(safeFromWei(item.price)) * item.quantity
         
-        const orderDetails = {
-          name: item.name,
-          images: item.images,
-          selectedColor: item.selectedColor || '',
-          selectedSize: item.selectedSize || '',
-          quantity: item.quantity,
-          price: Number(safeFromWei(item.price))
-        }
-
         await buyProduct(
           Number(item.id),
           shippingDetails,
-          itemPrice,
-          orderDetails
+          Number(itemPrice),
+          { quantity: item.quantity,
+            name: item.name,
+            images: item.images,
+            selectedColor: item.selectedColor || '',
+            selectedSize: item.selectedSize || '',
+            price: Number(item.price) } 
         )
       }
 
@@ -286,7 +281,10 @@ const Checkout = () => {
               {/* Cart Items */}
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600">
                 {cartItems.map((item) => (
-                  <div key={`${item.id}-${item.selectedColor}-${item.selectedSize}`} className="flex gap-4 pb-4 border-b border-gray-700/50">
+                  <div 
+                    key={`${item.id}-${item.selectedColor}-${item.selectedSize}`} 
+                    className="flex gap-4 pb-4 border-b border-gray-700/50"
+                  >
                     <img
                       src={item.images[0] || '/placeholder.png'}
                       alt={item.name}
@@ -295,6 +293,11 @@ const Checkout = () => {
                     <div className="flex-1">
                       <h3 className="text-white font-medium line-clamp-1">{item.name}</h3>
                       <div className="mt-1 space-y-1">
+                        {item.productType && (
+                          <span className="text-xs text-gray-400 block">
+                            Type: {item.productType}
+                          </span>
+                        )}
                         {item.selectedColor && (
                           <span className="text-xs text-gray-400 block">
                             Color: {item.selectedColor}

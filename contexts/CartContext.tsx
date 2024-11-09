@@ -3,12 +3,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface CartItem {
   id: string;
   name: string;
-  price: string | number;
-  quantity: number;
+  price: string;
   images: string[];
+  quantity: number;
+  productType?: string;
   selectedColor?: string;
   selectedSize?: string;
-  [key: string]: any;
 }
 
 interface CartContextType {

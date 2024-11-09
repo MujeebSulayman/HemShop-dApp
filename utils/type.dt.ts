@@ -98,6 +98,7 @@ export interface OrderDetails {
   selectedSize: string
   quantity: number
   price: number
+  productType?: string
 }
 
 export interface PurchaseHistoryStruct {
@@ -354,6 +355,7 @@ export interface OrderDetails {
   selectedSize: string
   quantity: number
   price: number
+  productType?: string
 }
 
 export interface PurchaseHistoryStruct {

@@ -73,8 +73,10 @@ const ProductDetails = () => {
       addToCart({
         ...product,
         id: product.id.toString(),
-        price: Number(product.price),
+        price: product.price.toString(),
         quantity,
+        selectedColor,
+        selectedSize,
       })
       toast.success('Added to cart')
     } catch (error: any) {

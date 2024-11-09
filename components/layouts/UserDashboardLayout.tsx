@@ -36,6 +36,7 @@ const navigationItems = [
     title: 'Sales',
     items: [
       { label: 'Orders', path: '/dashboard/user/orders', icon: ClipboardDocumentListIcon },
+      { label: 'Purchase History', path: '/dashboard/user/purchasHistory', icon: ClipboardDocumentListIcon },
       { label: 'Reviews', path: '/dashboard/user/reviews', icon: StarIcon },
     ]
   }

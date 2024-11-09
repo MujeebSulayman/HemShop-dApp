@@ -19,20 +19,12 @@ const AdminOrderDetail = () => {
   const fetchOrder = useCallback(async () => {
     try {
       setLoading(true)
-      console.log('Fetching order details for ID:', id)
       const orders = await getAllOrders()
-      console.log('All orders:', orders)
-      
-      const matchingOrders = orders.filter(
+      const orderDetail = orders.find(
         (order) => order.productId === Number(id)
       )
-      console.log('Matching orders:', matchingOrders)
-      
-      if (matchingOrders.length > 0) {
-        console.log('Selected order:', matchingOrders[0])
-        setOrder(matchingOrders[0])
-      } else {
-        console.warn('No matching order found for ID:', id)
+      if (orderDetail) {
+        setOrder(orderDetail)
       }
     } catch (error) {
       console.error('Error fetching order:', error)
@@ -47,21 +39,11 @@ const AdminOrderDetail = () => {
   }, [fetchOrder])
 
   const handleUpdateStatus = async () => {
-    if (!order || !address) {
-      console.warn('Missing order or address:', { order, address })
-      return
-    }
+    if (!order || !address) return
 
     try {
       setUpdating(true)
-      console.log('Updating order status:', {
-        productId: order.productId,
-        buyer: order.buyer
-      })
-      
       await markPurchaseDelivered(order.productId, order.buyer)
-      console.log('Order status updated successfully')
-      
       await fetchOrder()
       toast.success('Order status updated successfully')
     } catch (error) {
@@ -71,6 +53,7 @@ const AdminOrderDetail = () => {
       setUpdating(false)
     }
   }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -194,21 +177,12 @@ const AdminOrderDetail = () => {
                 
                 {/* Product Variations */}
                 <div className="mt-2 space-y-1">
-                  {order.orderDetails.productType && (
-                    <p className="text-sm text-gray-400">
-                      Type: {order.orderDetails.productType}
-                    </p>
-                  )}
-                  {order.orderDetails.selectedColor && (
-                    <p className="text-sm text-gray-400">
-                      Color: {order.orderDetails.selectedColor}
-                    </p>
-                  )}
-                  {order.orderDetails.selectedSize && (
-                    <p className="text-sm text-gray-400">
-                      Size: {order.orderDetails.selectedSize}
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-400">
+                    Color: {order.orderDetails.selectedColor}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Size: {order.orderDetails.selectedSize}
+                  </p>
                   <p className="text-sm text-gray-400">
                     Quantity: {order.orderDetails.quantity}
                   </p>

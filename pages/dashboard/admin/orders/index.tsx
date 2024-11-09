@@ -1,25 +1,36 @@
+import React, { useEffect, useState } from 'react'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
 import { getAllOrders } from '@/services/blockchain'
 import { PurchaseHistoryStruct } from '@/utils/type.dt'
-import { format } from 'date-fns'
-import { FiPackage, FiEye, FiFilter, FiSearch } from 'react-icons/fi'
+import { motion } from 'framer-motion'
+import {
+  FiPackage,
+  FiDollarSign,
+  FiTruck,
+  FiSearch,
+  FiEye,
+} from 'react-icons/fi'
+import { OrderActions } from '@/components/orders/OrderActions'
+import { useRouter } from 'next/router'
 import { Loader2 } from 'lucide-react'
 
 const AdminOrdersPage = () => {
-  const router = useRouter()
   const [orders, setOrders] = useState<PurchaseHistoryStruct[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'delivered'>('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'delivered' | 'pending'>('all')
+  const router = useRouter()
 
-  const fetchOrders = async () => {
+  useEffect(() => {
+    fetchAllOrders()
+  }, [])
+
+  const fetchAllOrders = async () => {
     try {
       setLoading(true)
-      const data = await getAllOrders()
-      // Sort by timestamp descending (newest first)
-      const sortedOrders = data.sort((a, b) => b.timestamp - a.timestamp)
+      const allOrders = await getAllOrders()
+      // Sort orders by timestamp (newest first)
+      const sortedOrders = allOrders.sort((a, b) => b.timestamp - a.timestamp)
       setOrders(sortedOrders)
     } catch (error) {
       console.error('Error fetching orders:', error)
@@ -28,169 +39,220 @@ const AdminOrdersPage = () => {
     }
   }
 
-  useEffect(() => {
-    fetchOrders()
-  }, [])
-
   const filteredOrders = orders.filter((order) => {
-    const matchesSearch = 
-      order.orderDetails.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.buyer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.seller.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.productId.toString().includes(searchQuery)
+    const matchesSearch =
+      order.buyer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.productId.toString().includes(searchTerm) ||
+      order.orderDetails.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      (statusFilter === 'delivered' && order.isDelivered) ||
-      (statusFilter === 'pending' && !order.isDelivered)
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'delivered' && order.isDelivered) ||
+      (filterStatus === 'pending' && !order.isDelivered)
 
     return matchesSearch && matchesStatus
   })
 
-  const getOrderStats = () => {
-    return {
-      total: orders.length,
-      delivered: orders.filter(order => order.isDelivered).length,
-      pending: orders.filter(order => !order.isDelivered).length,
-      totalValue: orders.reduce((sum, order) => sum + Number(order.totalAmount), 0)
-    }
-  }
+  const stats = [
+    {
+      title: 'Total Orders',
+      value: orders.length,
+      icon: FiPackage,
+      color: 'text-blue-500',
+    },
+    {
+      title: 'Total Revenue',
+      value: `${orders.reduce((acc, order) => acc + order.totalAmount, 0).toFixed(4)} ETH`,
+      icon: FiDollarSign,
+      color: 'text-green-500',
+    },
+    {
+      title: 'Delivered Orders',
+      value: orders.filter((order) => order.isDelivered).length,
+      icon: FiTruck,
+      color: 'text-indigo-500',
+    },
+    {
+      title: 'Pending Orders',
+      value: orders.filter((order) => !order.isDelivered).length,
+      icon: FiTruck,
+      color: 'text-yellow-500',
+    },
+  ]
 
-  const stats = getOrderStats()
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto" />
-          <p className="text-gray-400">Loading orders...</p>
-        </div>
-      </div>
-    )
+  const handleRowClick = (orderId: number) => {
+    router.push(`/dashboard/admin/orders/${orderId}`)
   }
 
   return (
-    <div className="p-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-gray-800/50 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Total Orders</p>
-          <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
-        </div>
-        <div className="bg-gray-800/50 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Delivered Orders</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{stats.delivered}</p>
-        </div>
-        <div className="bg-gray-800/50 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Pending Orders</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{stats.pending}</p>
-        </div>
-        <div className="bg-gray-800/50 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Total Value</p>
-          <p className="text-2xl font-bold text-white mt-1">{stats.totalValue.toFixed(4)} ETH</p>
-        </div>
+    <div className="space-y-6 p-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-white">Orders Management</h1>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by product name, buyer, or seller address..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-800 rounded-lg text-white placeholder-gray-400"
-          />
-        </div>
-        <div className="flex gap-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'pending' | 'delivered')}
-            className="px-4 py-2 bg-gray-800 rounded-lg text-white"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="delivered">Delivered</option>
-          </select>
-          <button
-            onClick={fetchOrders}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* Orders List */}
-      <div className="space-y-4">
-        {filteredOrders.map((order) => (
-          <div
-            key={`${order.productId}-${order.timestamp}`}
-            className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700/50 transition-colors"
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-gray-800 rounded-lg p-6 border border-gray-700"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16">
-                  {order.orderDetails.images[0] ? (
-                    <img
-                      src={order.orderDetails.images[0]}
-                      alt={order.orderDetails.name}
-                      className="w-full h-full object-cover rounded-md"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-700 rounded-md flex items-center justify-center">
-                      <FiPackage className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-medium text-white">{order.orderDetails.name}</h3>
-                  <p className="text-sm text-gray-400">
-                    Order #{order.productId.toString().padStart(8, '0')}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    Buyer: {order.buyer.slice(0, 6)}...{order.buyer.slice(-4)}
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {format(order.timestamp * 1000, 'MMM dd, yyyy')}
-                  </p>
-                </div>
+              <div>
+                <p className="text-gray-400 text-sm">{stat.title}</p>
+                <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
               </div>
-
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-white font-medium">
-                    {order.totalAmount.toFixed(4)} ETH
-                  </p>
-                  <span
-                    className={`inline-block px-2 py-1 rounded-full text-xs ${
-                      order.isDelivered
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-yellow-500/20 text-yellow-400'
-                    }`}
-                  >
-                    {order.isDelivered ? 'Delivered' : 'Pending'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => router.push(`/dashboard/admin/orders/${order.productId}`)}
-                  className="p-2 hover:bg-gray-600 rounded-full transition-colors"
-                >
-                  <FiEye className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
+              <stat.icon className={`w-8 h-8 ${stat.color}`} />
             </div>
-          </div>
+          </motion.div>
         ))}
+      </div>
 
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12 bg-gray-800 rounded-lg">
-            <FiPackage className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-medium text-gray-100 mb-2">No Orders Found</h3>
-            <p className="text-gray-400">Try adjusting your search or filters</p>
-          </div>
-        )}
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-grow">
+          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by buyer address, order ID, or product name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-gray-800 rounded-lg border border-gray-700 text-white"
+          />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as 'all' | 'delivered' | 'pending')}
+          className="px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 text-white"
+        >
+          <option value="all">All Orders</option>
+          <option value="delivered">Delivered</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+
+      {/* Orders Table */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-700">
+            <thead className="bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Order ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Product
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Buyer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-indigo-500" />
+                  </td>
+                </tr>
+              ) : filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-400">
+                    No orders found
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr
+                    key={`${order.productId}-${order.timestamp}`}
+                    className="hover:bg-gray-700/50 cursor-pointer"
+                    onClick={() => handleRowClick(order.productId)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-white">
+                      #{order.productId}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={order.orderDetails.images[0] || '/placeholder.png'}
+                          alt={order.orderDetails.name}
+                          className="w-10 h-10 rounded-lg object-cover bg-gray-700"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.png'
+                          }}
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-white font-medium">
+                            {order.orderDetails.name}
+                          </span>
+                          <span className="text-gray-400 text-sm">
+                            Qty: {order.orderDetails.quantity}
+                            {order.orderDetails.selectedSize && ` • Size: ${order.orderDetails.selectedSize}`}
+                            {order.orderDetails.selectedColor && ` • Color: ${order.orderDetails.selectedColor}`}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                      {order.buyer.slice(0, 6)}...{order.buyer.slice(-4)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                      {order.totalAmount.toFixed(4)} ETH
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          order.isDelivered
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                        }`}
+                      >
+                        {order.isDelivered ? 'Delivered' : 'Pending'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                      {new Date(order.timestamp * 1000).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(order.productId);
+                          }}
+                          className="text-indigo-400 hover:text-indigo-300"
+                        >
+                          <FiEye className="w-5 h-5" />
+                        </button>
+                        <OrderActions
+                          productId={order.productId}
+                          buyerAddress={order.buyer}
+                          isDelivered={order.isDelivered}
+                          onSuccess={fetchAllOrders}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

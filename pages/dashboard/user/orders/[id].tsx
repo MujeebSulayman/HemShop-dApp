@@ -4,9 +4,7 @@ import { useRouter } from 'next/router'
 import { useAccount } from 'wagmi'
 import { PurchaseHistoryStruct } from '@/utils/type.dt'
 import { getBuyerPurchaseHistory, markPurchaseDelivered, isOwnerOrVerifiedSeller } from '@/services/blockchain'
-import { FiPackage, FiTruck, FiUser, FiMapPin, FiClock, FiArrowLeft } from 'react-icons/fi'
-import { Loader2 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { FiPackage, FiTruck, FiUser, FiMapPin } from 'react-icons/fi'
 
 const OrderDetail = () => {
   const router = useRouter()
@@ -36,7 +34,6 @@ const OrderDetail = () => {
       }
     } catch (error) {
       console.error('Error fetching order:', error)
-      toast.error('Failed to fetch order details')
     } finally {
       setLoading(false)
     }
@@ -58,219 +55,90 @@ const OrderDetail = () => {
       setUpdating(true)
       await markPurchaseDelivered(order.productId, order.buyer)
       await fetchOrder()
-      toast.success('Order status updated successfully')
     } catch (error) {
       console.error('Error updating order status:', error)
-      toast.error('Failed to update order status')
     } finally {
       setUpdating(false)
     }
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto" />
-          <p className="text-gray-400">Loading order details...</p>
-        </div>
-      </div>
-    )
+    return <div className="p-6 text-center text-gray-400">Loading order details...</div>
   }
 
   if (!order) {
-    return (
-      <div className="p-6">
-        <div className="text-center text-gray-400">
-          <p className="text-xl">Order not found</p>
-          <button
-            onClick={() => router.push('/dashboard/user/orders')}
-            className="mt-4 text-indigo-400 hover:text-indigo-300"
-          >
-            Back to Orders
-          </button>
-        </div>
-      </div>
-    )
+    return <div className="p-6 text-center text-gray-400">Order not found</div>
   }
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/dashboard/user/orders')}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <FiArrowLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              Order #{order.productId.toString().padStart(8, '0')}
-            </h1>
-            <p className="text-gray-400 mt-1">
-              Placed on {new Date(order.timestamp * 1000).toLocaleString()}
-            </p>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-white">Order #{order.productId.toString()}</h1>
         {isAuthorized && !order.isDelivered && (
           <button
             onClick={handleUpdateStatus}
             disabled={updating}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 
-              disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
           >
-            {updating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Updating...</span>
-              </>
-            ) : (
-              <>
-                <FiPackage className="w-4 h-4" />
-                <span>Mark as Delivered</span>
-              </>
-            )}
+            {updating ? 'Updating...' : 'Mark as Delivered'}
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Order Details Card */}
-        <div className="bg-gray-800/50 rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 text-white mb-4">
-            <FiPackage className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">Order Details</h2>
-          </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Order Info */}
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Order Information</h2>
           <div className="space-y-4">
-            {/* Product Information */}
-            <div className="flex gap-4 border-b border-gray-700/50 pb-4">
-              <img
-                src={order.orderDetails.images?.[0] || '/placeholder.png'}
-                alt="Product"
-                className="w-20 h-20 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <h3 className="text-white font-medium">{order.orderDetails.name}</h3>
-                
-                {/* Product Variations */}
-                <div className="mt-2 space-y-1">
-                  {order.orderDetails.productType && (
-                    <p className="text-sm text-gray-400">
-                      Type: {order.orderDetails.productType}
-                    </p>
-                  )}
-                  {order.orderDetails.selectedColor && (
-                    <p className="text-sm text-gray-400">
-                      Color: {order.orderDetails.selectedColor}
-                    </p>
-                  )}
-                  {order.orderDetails.selectedSize && (
-                    <p className="text-sm text-gray-400">
-                      Size: {order.orderDetails.selectedSize}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-400">
-                    Quantity: {order.orderDetails.quantity}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-white font-medium">
-                  {order.basePrice.toFixed(4)} ETH
+            <div className="flex items-center">
+              <FiPackage className="w-5 h-5 text-blue-500 mr-3" />
+              <div>
+                <p className="text-gray-400">Status</p>
+                <p className={`text-lg ${order.isDelivered ? 'text-green-400' : 'text-yellow-400'}`}>
+                  {order.isDelivered ? 'Delivered' : 'Pending'}
                 </p>
               </div>
             </div>
-
-            {/* Price Breakdown */}
-            <div className="space-y-2 pt-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Subtotal</span>
-                <span className="text-white">{order.basePrice.toFixed(4)} ETH</span>
+            <div className="flex items-center">
+              <FiTruck className="w-5 h-5 text-green-500 mr-3" />
+              <div>
+                <p className="text-gray-400">Amount</p>
+                <p className="text-lg text-white">{order.totalAmount.toFixed(4)} ETH</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Network Fee</span>
-                <span className="text-white">~0.001 ETH</span>
-              </div>
-              <div className="border-t border-gray-700/50 pt-2 mt-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Total</span>
-                  <span className="text-white font-medium">
-                    {order.totalAmount.toFixed(4)} ETH
-                  </span>
-                </div>
+            </div>
+            <div className="flex items-center">
+              <FiUser className="w-5 h-5 text-indigo-500 mr-3" />
+              <div>
+                <p className="text-gray-400">Seller</p>
+                <p className="text-lg text-white">
+                  {order.seller.slice(0, 6)}...{order.seller.slice(-4)}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Shipping Details */}
-        <div className="bg-gray-800/50 rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 text-white mb-4">
-            <FiMapPin className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">Shipping Details</h2>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-gray-400 text-sm">Full Name</label>
-              <p className="text-white">{order.shippingDetails.fullName}</p>
-            </div>
-            <div>
-              <label className="text-gray-400 text-sm">Email</label>
-              <p className="text-white">{order.shippingDetails.email}</p>
-            </div>
-            <div>
-              <label className="text-gray-400 text-sm">Phone</label>
-              <p className="text-white">{order.shippingDetails.phone}</p>
-            </div>
-            <div>
-              <label className="text-gray-400 text-sm">Address</label>
-              <p className="text-white">{order.shippingDetails.streetAddress}</p>
-              <p className="text-white">
-                {order.shippingDetails.city}, {order.shippingDetails.state}{' '}
-                {order.shippingDetails.postalCode}
-              </p>
-              <p className="text-white">{order.shippingDetails.country}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Order Status */}
-        <div className="bg-gray-800/50 rounded-xl p-6 space-y-4">
-          <div className="flex items-center gap-2 text-white mb-4">
-            <FiClock className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">Order Status</h2>
-          </div>
-
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <h2 className="text-xl font-semibold text-white mb-4">Shipping Details</h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">Status</span>
-              <span
-                className={`px-3 py-1 rounded-full text-sm ${
-                  order.isDelivered
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-yellow-500/20 text-yellow-400'
-                }`}
-              >
-                {order.isDelivered ? 'Delivered' : 'Pending'}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Order Date</span>
-                <span className="text-white">
-                  {new Date(order.timestamp * 1000).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Seller Address</span>
-                <span className="text-white">
-                  {`${order.seller.slice(0, 6)}...${order.seller.slice(-4)}`}
-                </span>
+            <div className="flex items-start">
+              <FiMapPin className="w-5 h-5 text-purple-500 mr-3 mt-1" />
+              <div className="flex-1">
+                <p className="text-gray-400">Delivery Address</p>
+                <p className="text-lg text-white">{order.shippingDetails.fullName}</p>
+                <p className="text-gray-300">{order.shippingDetails.streetAddress}</p>
+                <p className="text-gray-300">
+                  {order.shippingDetails.city}, {order.shippingDetails.state}{' '}
+                  {order.shippingDetails.postalCode}
+                </p>
+                <p className="text-gray-300">{order.shippingDetails.country}</p>
+                <p className="text-gray-300 mt-2">
+                  Phone: {order.shippingDetails.phone}
+                </p>
+                <p className="text-gray-300">
+                  Email: {order.shippingDetails.email}
+                </p>
               </div>
             </div>
           </div>

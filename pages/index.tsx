@@ -1,7 +1,7 @@
-import CategoryShowcase from '@/components/CategoryShowcase'
-import Hero from '@/components/Hero'
-import ProductList from '@/components/ProductList'
-import RecentTransactions from '@/components/RecentTransactions'
+import CategoryShowcase from '../components/CategoryShowcase'
+import Hero from '../components/Hero'
+import ProductList from '../components/ProductList'
+import RecentTransactions from '../components/RecentTransactions'
 import { NextPage } from 'next'
 import Head from 'next/head'
 

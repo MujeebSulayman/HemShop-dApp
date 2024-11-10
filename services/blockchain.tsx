@@ -177,10 +177,10 @@ const buyProduct = async (
   price: number,
   orderDetails: OrderDetails
 ): Promise<void> => {
-  if (!ethereum) throw new Error('No wallet provider found');
+  if (!ethereum) throw new Error('No wallet provider found')
 
   try {
-    const contract = await getEthereumContract();
+    const contract = await getEthereumContract()
 
     // Validate shipping details
     const requiredFields = [
@@ -192,26 +192,23 @@ const buyProduct = async (
       'postalCode',
       'phone',
       'email',
-    ];
+    ]
 
     for (const field of requiredFields) {
       if (!shippingDetails[field as keyof ShippingDetails]) {
-        throw new Error(`Missing required field: ${field}`);
+        throw new Error(`Missing required field: ${field}`)
       }
     }
 
-    const tx = await contract.buyProduct(
-      productId, 
-      shippingDetails, 
-      orderDetails, 
-      { value: toWei(price) }
-    );
-    await tx.wait();
+    const tx = await contract.buyProduct(productId, shippingDetails, orderDetails, {
+      value: toWei(price),
+    })
+    await tx.wait()
   } catch (error) {
-    console.error('Buy product error:', error);
-    throw error;
+    console.error('Buy product error:', error)
+    throw error
   }
-};
+}
 
 const getSellerPurchaseHistory = async (seller: string): Promise<PurchaseHistoryStruct[]> => {
   const contract = await getEthereumContract()
@@ -817,6 +814,7 @@ const structureProduct = (products: any[]): ProductStruct[] => {
     description: product.description,
     price: BigInt(product.price),
     stock: Number(product.stock),
+    initialStock: Number(product.initialStock || product.stock),
     colors: product.colors,
     sizes: product.sizes,
     images: product.images,
@@ -958,4 +956,5 @@ export {
   safeFromWei,
   markOrderDelivered,
   getAllOrders,
+  type CategoryStruct,
 }

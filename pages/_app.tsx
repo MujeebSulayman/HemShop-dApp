@@ -9,6 +9,7 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { useRouter } from 'next/router'
 import { CartProvider } from '@/contexts/CartContext'
 import { WishlistProvider } from '@/contexts/WishlistContext'
+import Footer from '@/components/Footer'
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter()
@@ -45,11 +46,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 pauseOnHover
                 theme="dark"
               />
-              {!router.pathname.includes('/dashboard') && (
-                <footer className="text-center pb-10 text-gray-400 text-md">
-                  © 2024 HemShop. All rights reserved.
-                </footer>
-              )}
+              {!router.pathname.includes('/dashboard') && <Footer />}
             </div>
           </Providers>
         </WishlistProvider>

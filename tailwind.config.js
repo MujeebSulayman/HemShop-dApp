@@ -6,7 +6,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: [
-          'Plus Jakarta Sans',
+          'Space Grotesk',
           '-apple-system',
           'BlinkMacSystemFont',
           'Segoe UI',
@@ -19,6 +19,7 @@ module.exports = {
           'Helvetica Neue',
           'sans-serif',
         ],
+        grotesk: ['Space Grotesk', 'sans-serif'],
       },
     },
   },

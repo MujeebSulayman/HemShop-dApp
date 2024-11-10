@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { toast } from 'react-toastify'
-import { requestToBecomeVendor } from '@/services/blockchain'
-import { SellerRegistrationParams } from '@/utils/type.dt'
+import { requestToBecomeVendor, getSeller } from '@/services/blockchain'
+import { SellerRegistrationParams, SellerStatus } from '@/utils/type.dt'
 import { useAccount } from 'wagmi'
 import { 
   Store, 
@@ -10,7 +10,8 @@ import {
   Phone, 
   FileText, 
   Image as ImageIcon,
-  Loader2 
+  Loader2,
+  AlertCircle 
 } from 'lucide-react'
 import withUserLayout from '@/components/hoc/withUserLayout'
 
@@ -18,6 +19,8 @@ const BecomeVendor = () => {
   const router = useRouter()
   const { address } = useAccount()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [sellerStatus, setSellerStatus] = useState<SellerStatus | null>(null)
   const [formData, setFormData] = useState<SellerRegistrationParams>({
     businessName: '',
     description: '',
@@ -25,6 +28,65 @@ const BecomeVendor = () => {
     phone: '',
     logo: ''
   })
+
+  useEffect(() => {
+    const checkSellerStatus = async () => {
+      if (!address) return
+      try {
+        const seller = await getSeller(address)
+        if (seller) {
+          setSellerStatus(seller.status)
+        }
+      } catch (error) {
+        console.error('Error checking seller status:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkSellerStatus()
+  }, [address])
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
+
+  // Show message if already registered or pending
+  if (sellerStatus !== null) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-12">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/10 mb-6">
+              <AlertCircle className="w-8 h-8 text-yellow-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-4">
+              {sellerStatus === SellerStatus.Pending
+                ? 'Verification Pending'
+                : 'Already Registered'}
+            </h1>
+            <p className="text-gray-400 text-lg mb-8">
+              {sellerStatus === SellerStatus.Pending
+                ? 'Your vendor application is currently under review. Please wait for admin approval.'
+                : 'You are already registered as a vendor.'}
+            </p>
+            <button
+              onClick={() => router.push('/dashboard/user')}
+              className="inline-flex items-center px-6 py-3 rounded-xl bg-indigo-500 
+                text-white hover:bg-indigo-600 transition-colors"
+            >
+              Return to Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -46,7 +108,7 @@ const BecomeVendor = () => {
       setIsSubmitting(true)
       await requestToBecomeVendor(formData)
       toast.success('Vendor registration submitted successfully!')
-      router.push('/dashboard/user/profile')
+      router.push('/dashboard/user')
     } catch (error: any) {
       toast.error(error.message || 'Failed to register as vendor')
     } finally {

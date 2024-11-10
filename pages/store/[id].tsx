@@ -198,7 +198,7 @@ const ProductDetails = () => {
               {/* Price Section */}
               <div className="flex items-baseline gap-4 py-4 border-y border-gray-800">
                 <span className="text-3xl font-bold text-white">
-                  {Number(ethers.formatUnits(product.price, 18)).toFixed(4)} ETH
+                  {parseFloat(ethers.formatUnits(product.price, 18)).toString()} ETH
                 </span>
                 {Number(product.stock) > 0 ? (
                   <span className="text-sm text-green-400 flex items-center gap-1">
@@ -215,7 +215,7 @@ const ProductDetails = () => {
 
               <div className="flex items-baseline gap-4 py-4 border-y border-gray-800">
                 <span className="text-sm text-gray-400">•</span>
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/dashboard/user/${product.seller}`)}>
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(`/vendor/${product.seller}`)}>
                   <span className="text-sm text-gray-400">Seller:</span>
                   <span className="text-sm text-gray-400">{product.seller}</span>
                 </div>
@@ -342,131 +342,144 @@ const ProductDetails = () => {
 
         {/* Product Details & Reviews Section */}
         <div className="mt-16">
-          <div className="border-b border-gray-800">
-            <nav className="flex gap-8">
+          <div className="mb-8">
+            <div className="flex space-x-1 rounded-xl bg-gray-800/30 p-1 max-w-md">
               <button
                 onClick={() => setActiveTab('details')}
-                className={`py-4 font-medium transition-colors ${
-                  activeTab === 'details'
-                    ? 'border-b-2 border-indigo-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className={`w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all duration-200 ease-out
+                  ${
+                    activeTab === 'details'
+                      ? 'bg-white text-gray-900 shadow'
+                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                  }
+                `}
               >
                 Product Details
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
-                className={`py-4 font-medium transition-colors ${
-                  activeTab === 'reviews'
-                    ? 'border-b-2 border-indigo-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className={`w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-all duration-200 ease-out
+                  ${
+                    activeTab === 'reviews'
+                      ? 'bg-white text-gray-900 shadow'
+                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                  }
+                `}
               >
                 Reviews ({reviews.length})
               </button>
-            </nav>
+            </div>
           </div>
 
           {/* Tab Content */}
-          {activeTab === 'details' ? (
-            <div className="mt-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Product Specifications</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between py-2 border-b border-gray-800">
-                      <span className="text-gray-400">SKU</span>
-                      <span className="text-white">{product.sku || `PRD-${product.id}`}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-gray-800">
-                      <span className="text-gray-400">Brand</span>
-                      <span className="text-white">{product.brand || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-gray-800">
-                      <span className="text-gray-400">Category</span>
-                      <span className="text-white">{product.category || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between py-2 border-b border-gray-800">
-                      <span className="text-gray-400">Sub Category</span>
-                      <span className="text-white">{product.subCategory || 'N/A'}</span>
-                    </div>
-                    {product.sizes && product.sizes.length > 0 && (
-                      <div className="flex justify-between py-2 border-b border-gray-800">
-                        <span className="text-gray-400">Available Sizes</span>
-                        <span className="text-white">{product.sizes.join(', ')}</span>
+          <div className="mt-4">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'details' ? (
+                <div className="bg-gray-800/30 rounded-2xl p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold text-white">Product Specifications</h3>
+                      <div className="space-y-2">
+                        <div className="flex justify-between py-2 border-b border-gray-800">
+                          <span className="text-gray-400">SKU</span>
+                          <span className="text-white">{product.sku || `PRD-${product.id}`}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-gray-800">
+                          <span className="text-gray-400">Brand</span>
+                          <span className="text-white">{product.brand || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-gray-800">
+                          <span className="text-gray-400">Category</span>
+                          <span className="text-white">{product.category || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-gray-800">
+                          <span className="text-gray-400">Sub Category</span>
+                          <span className="text-white">{product.subCategory || 'N/A'}</span>
+                        </div>
+                        {product.sizes && product.sizes.length > 0 && (
+                          <div className="flex justify-between py-2 border-b border-gray-800">
+                            <span className="text-gray-400">Available Sizes</span>
+                            <span className="text-white">{product.sizes.join(', ')}</span>
+                          </div>
+                        )}
+                        {product.colors.length > 0 && (
+                          <div className="flex justify-between py-2 border-b border-gray-800">
+                            <span className="text-gray-400">Available Colors</span>
+                            <span className="text-white">{product.colors.join(', ')}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {product.colors.length > 0 && (
-                      <div className="flex justify-between py-2 border-b border-gray-800">
-                        <span className="text-gray-400">Available Colors</span>
-                        <span className="text-white">{product.colors.join(', ')}</span>
-                      </div>
-                    )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold text-white">Product Description</h3>
+                      <p className="text-gray-300 whitespace-pre-wrap">{product.description}</p>
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-white">Product Description</h3>
-                  <p className="text-gray-300 whitespace-pre-wrap">{product.description}</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-8 space-y-8">
-              {/* Review Form */}
-              <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
-                <h3 className="text-xl font-semibold text-white mb-6">Write a Review</h3>
-                <ReviewForm
-                  productId={Number(product.id)}
-                  productOwner={product.seller}
-                  onReviewSubmitted={() => {
-                    // Refresh reviews after submission
-                    getReviews(Number(product.id)).then(setReviews)
-                  }}
-                />
-              </div>
-
-              {/* Reviews List */}
-              <div className="space-y-6">
-                {reviews.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50">
-                    <p className="text-gray-400">
-                      No reviews yet. Be the first to review this product!
-                    </p>
+              ) : (
+                <div className="bg-gray-800/30 rounded-2xl p-6">
+                  {/* Review Form */}
+                  <div className="bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6">
+                    <h3 className="text-xl font-semibold text-white mb-6">Write a Review</h3>
+                    <ReviewForm
+                      productId={Number(product.id)}
+                      productOwner={product.seller}
+                      onReviewSubmitted={() => {
+                        // Refresh reviews after submission
+                        getReviews(Number(product.id)).then(setReviews)
+                      }}
+                    />
                   </div>
-                ) : (
-                  reviews.map((review) => (
-                    <div
-                      key={review.reviewer}
-                      className="bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-white">
-                              {`${review.reviewer.slice(0, 6)}...${review.reviewer.slice(-4)}`}
-                            </span>
-                            <span className="text-gray-400">•</span>
-                            <div className="flex items-center text-yellow-400">
-                              {[...Array(5)].map((_, i) => (
-                                <FiStar
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating ? 'fill-current' : 'fill-none'
-                                  }`}
-                                />
-                              ))}
+
+                  {/* Reviews List */}
+                  <div className="space-y-6">
+                    {reviews.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50">
+                        <p className="text-gray-400">
+                          No reviews yet. Be the first to review this product!
+                        </p>
+                      </div>
+                    ) : (
+                      reviews.map((review) => (
+                        <div
+                          key={review.reviewer}
+                          className="bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700/50 p-6"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-white">
+                                  {`${review.reviewer.slice(0, 6)}...${review.reviewer.slice(-4)}`}
+                                </span>
+                                <span className="text-gray-400">•</span>
+                                <div className="flex items-center text-yellow-400">
+                                  {[...Array(5)].map((_, i) => (
+                                    <FiStar
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < review.rating ? 'fill-current' : 'fill-none'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="mt-2 text-gray-300">{review.comment}</p>
                             </div>
                           </div>
-                          <p className="mt-2 text-gray-300">{review.comment}</p>
                         </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

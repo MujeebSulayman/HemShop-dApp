@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
 import { useRouter } from 'next/router'
-import { getSeller, getSellerProducts, updateSellerStatus } from '@/services/blockchain'
+import { getSeller, getSellerProducts, updateSellerStatus, safeFromWei } from '@/services/blockchain'
 import { SellerData, ProductStruct, SellerStatus } from '@/utils/type.dt'
 import { 
   Loader2, Store, Package, Mail, Phone,
@@ -9,7 +9,6 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import Link from 'next/link'
-import ethers from 'ethers'
 
 const SellerDetail = () => {
   const router = useRouter()
@@ -316,7 +315,7 @@ const SellerDetail = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-400">{Number(product.stock)} in stock</span>
                     <span className="text-indigo-400">
-                      {Number(ethers.formatEther(product.price))} ETH
+                      {safeFromWei(product.price)} ETH
                     </span>
                   </div>
                 </div>

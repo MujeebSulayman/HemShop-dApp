@@ -21,7 +21,7 @@ const navigationItems = [
     title: 'Main',
     items: [
       { label: 'Dashboard', path: '/dashboard/user', icon: HomeIcon },
-      { label: 'Profile', path: '/dashboard/user/profile', icon: UserIcon },
+
       { label: 'Become Vendor', path: '/dashboard/user/becomeVendor', icon: BuildingStorefrontIcon },
     ]
   },
@@ -30,6 +30,7 @@ const navigationItems = [
     items: [
       { label: 'All Products', path: '/dashboard/user/products', icon: CubeIcon },
       { label: 'Create Product', path: '/dashboard/user/products/create', icon: PlusCircleIcon },
+      
     ]
   },
   {
@@ -37,7 +38,7 @@ const navigationItems = [
     items: [
       { label: 'Orders', path: '/dashboard/user/orders', icon: ClipboardDocumentListIcon },
       { label: 'Purchase History', path: '/dashboard/user/purchasHistory', icon: ClipboardDocumentListIcon },
-      { label: 'Reviews', path: '/dashboard/user/reviews', icon: StarIcon },
+      { label: 'wIthdraw', path: '/dashboard/user/withdraw', icon: PlusCircleIcon },
     ]
   }
 ]

@@ -14,6 +14,7 @@ export interface ProductParams {
   brand: string
   sku: string | number
   seller: string
+  initialStock?: string | number
 }
 
 export interface ProductStruct {
@@ -36,6 +37,7 @@ export interface ProductStruct {
   wishlist: boolean
   deleted: boolean
   reviews: ReviewStruct[]
+  initialStock: number
 }
 
 export interface ReviewParams {
@@ -64,12 +66,6 @@ export interface CategoryStruct {
   subCategories?: SubCategoryStruct[]
 }
 
-export interface SubCategoryStruct {
-  id: number
-  name: string
-  parentCategoryId: number
-  isActive: boolean
-}
 
 export interface ReviewStruct {
   reviewId: number
@@ -98,18 +94,6 @@ export interface OrderDetails {
   selectedSize: string
   quantity: number
   price: number
-}
-
-export interface PurchaseHistoryStruct {
-  productId: number
-  totalAmount: number
-  basePrice: number
-  timestamp: number
-  buyer: string
-  seller: string
-  isDelivered: boolean
-  shippingDetails: ShippingDetails
-  orderDetails: OrderDetails
 }
 
 export enum SellerStatus {
@@ -152,46 +136,6 @@ export interface ProductInput {
   seller: string
 }
 
-// Consolidated ProductInput interface
-export interface ProductInput {
-  name: string
-  description: string
-  price: number
-  stock: number
-  colors: string[]
-  sizes: string[]
-  images: string[]
-  categoryId: number
-  subCategoryId: number
-  weight: number
-  model: string
-  brand: string
-  sku: number | string
-  seller: string
-}
-
-// Consolidated ProductStruct interface
-export interface ProductStruct {
-  id: number
-  seller: string
-  name: string
-  description: string
-  price: bigint
-  stock: number
-  colors: string[]
-  sizes: string[]
-  images: string[]
-  category: string
-  subCategory: string
-  weight: number
-  model: string
-  brand: string
-  sku: number
-  soldout: boolean
-  wishlist: boolean
-  deleted: boolean
-  reviews: ReviewStruct[]
-}
 
 // Update CartItem interface
 export interface CartItem extends ProductStruct {
@@ -219,26 +163,6 @@ export interface SellerRegistrationParams {
   logo: string
 }
 
-// Consolidated CategoryStruct interface
-export interface CategoryStruct {
-  id: number
-  name: string
-  isActive: boolean
-  subCategoryIds: number[]
-  subCategories?: SubCategoryStruct[]
-}
-
-// Consolidated SellerProfile interface
-export interface SellerProfile {
-  businessName: string
-  description: string
-  email: string
-  phone: string
-  logo: string
-  registeredAt: number
-  termsAccepted: boolean
-}
-
 // Add missing event types used in blockchain.tsx
 export interface ContractEvent {
   productId: number
@@ -247,53 +171,7 @@ export interface ContractEvent {
   timestamp: number
 }
 
-// Consolidated PurchaseHistoryStruct interface
-export interface PurchaseHistoryStruct {
-  productId: number
-  totalAmount: number
-  basePrice: number
-  timestamp: number
-  buyer: string
-  seller: string
-  isDelivered: boolean
-  shippingDetails: ShippingDetails
-  orderDetails: OrderDetails
-}
 
-// Update ReviewStruct to match blockchain service
-export interface ReviewStruct {
-  reviewId: number
-  reviewer: string
-  rating: number
-  comment: string
-  deleted: boolean
-  timestamp: number
-}
-
-// Update SubCategoryStruct to match blockchain service
-export interface SubCategoryStruct {
-  id: number
-  name: string
-  parentCategoryId: number
-  isActive: boolean
-}
-
-// Add missing SellerRegistrationParams
-export interface SellerRegistrationParams {
-  businessName: string
-  description: string
-  email: string
-  phone: string
-  logo: string
-}
-
-// Add missing category types
-export interface CategoryStruct {
-  id: number
-  name: string
-  isActive: boolean
-  subCategoryIds: number[]
-}
 
 export interface SubCategoryStruct {
   id: number
@@ -302,7 +180,6 @@ export interface SubCategoryStruct {
   isActive: boolean
 }
 
-// Add utility types for blockchain interactions
 export type Address = string
 export type Wei = string | number
 export type Timestamp = number
@@ -347,20 +224,12 @@ export interface OrderActionResult {
   error?: any
 }
 
-export interface OrderDetails {
-  name: string
-  images: string[]
-  selectedColor: string
-  selectedSize: string
-  quantity: number
-  price: number
-}
-
 export interface PurchaseHistoryStruct {
   productId: number
   buyer: string
   seller: string
   totalAmount: number
+  basePrice: number
   timestamp: number
   isDelivered: boolean
   shippingDetails: ShippingDetails
@@ -370,14 +239,3 @@ export interface PurchaseHistoryStruct {
   updatedBy?: string
 }
 
-export interface ShippingDetails {
-  fullName: string
-  email: string
-  phone: string
-  streetAddress: string
-  city: string
-  state: string
-  postalCode: string
-  country: string
-  deliveryInstructions?: string
-}

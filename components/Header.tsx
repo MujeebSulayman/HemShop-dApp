@@ -10,14 +10,14 @@ import { BiStore } from 'react-icons/bi'
 import { Menu, Transition } from '@headlessui/react'
 import { FiChevronDown, FiUser, FiPackage, FiSettings } from 'react-icons/fi'
 import { useCart } from '@/contexts/CartContext'
-import { fromWei } from '@/services/blockchain'
-import Image from 'next/image'
+import { fromWei, getEthereumContract } from '@/services/blockchain'
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const [scrolled, setScrolled] = useState<boolean>(false)
   const { address } = useAccount()
   const { cartItems, cartCount, removeFromCart } = useCart()
+  const [isDeployer, setIsDeployer] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,11 +27,27 @@ const Header: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const checkDeployer = async () => {
+      if (address) {
+        try {
+          const contract = await getEthereumContract()
+          const owner = await contract.owner()
+          setIsDeployer(owner.toLowerCase() === address.toLowerCase())
+        } catch (error) {
+          console.error('Error checking deployer:', error)
+          setIsDeployer(false)
+        }
+      }
+    }
+    checkDeployer()
+  }, [address])
+
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/categories', label: 'Categories' },
     { href: '/store', label: 'Store' },
-    { href: '/deals', label: 'Deals' },
+
     { href: '/vendor', label: 'Vendors' },
   ]
 
@@ -41,12 +57,15 @@ const Header: React.FC = () => {
       label: 'Dashboard',
       icon: FiUser,
     },
-
-    {
-      href: '/dashboard/admin',
-      label: 'Admin Dashboard',
-      icon: FiUser,
-    },
+    ...(isDeployer
+      ? [
+          {
+            href: '/dashboard/admin',
+            label: 'Admin Dashboard',
+            icon: FiUser,
+          },
+        ]
+      : []),
   ]
 
   const safeFromWei = (value: string | number): string => {

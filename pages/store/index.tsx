@@ -1,4 +1,4 @@
-import ProductList from '../../components/ProductList'
+import ProductList from '@/components/ui/ProductList'
 import React from 'react'
 
 const index = () => {

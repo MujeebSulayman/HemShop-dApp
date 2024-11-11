@@ -66,7 +66,6 @@ export interface CategoryStruct {
   subCategories?: SubCategoryStruct[]
 }
 
-
 export interface ReviewStruct {
   reviewId: number
   reviewer: string
@@ -78,13 +77,13 @@ export interface ReviewStruct {
 
 export interface ShippingDetails {
   fullName: string
+  email: string
+  phone: string
   streetAddress: string
   city: string
   state: string
   country: string
   postalCode: string
-  phone: string
-  email: string
 }
 
 export interface OrderDetails {
@@ -136,7 +135,6 @@ export interface ProductInput {
   seller: string
 }
 
-
 // Update CartItem interface
 export interface CartItem extends ProductStruct {
   quantity: number
@@ -170,8 +168,6 @@ export interface ContractEvent {
   seller: string
   timestamp: number
 }
-
-
 
 export interface SubCategoryStruct {
   id: number
@@ -238,4 +234,3 @@ export interface PurchaseHistoryStruct {
   lastUpdated?: number
   updatedBy?: string
 }
-

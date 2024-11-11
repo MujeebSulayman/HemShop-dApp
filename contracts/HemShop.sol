@@ -105,10 +105,12 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 totalAmount;
     uint256 basePrice;
     uint256 timestamp;
+    uint256 lastUpdated;
     address buyer;
     address seller;
     bool isDelivered;
     ShippingDetails shippingDetails;
+    OrderDetails orderDetails;
   }
 
   struct ProductInput {
@@ -133,6 +135,16 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string avatar;
     uint256 registeredAt;
     bool isActive;
+  }
+
+  struct OrderDetails {
+    string name;
+    string[] images;
+    string selectedColor;
+    string selectedSize;
+    uint256 quantity;
+    string category;
+    string description;
   }
 
   // --- Mappings ---
@@ -668,55 +680,37 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function buyProduct(
     uint256 productId,
-    ShippingDetails calldata shippingDetails
+    ShippingDetails calldata shippingDetails,
+    string calldata selectedColor,
+    string calldata selectedSize,
+    uint256 quantity
   ) external payable nonReentrant {
-    require(productExists[productId], 'Product does not exist');
-    require(!products[productId].deleted, 'Product is deleted');
-    require(products[productId].stock > 0, 'Product is out of stock');
-    require(products[productId].soldout == false, 'Product is already soldout');
-    require(products[productId].seller != msg.sender, 'Cannot buy your own product');
+    require(productExists[productId], 'Product not found');
+    ProductStruct storage product = products[productId];
+    require(!product.deleted, 'Product has been deleted');
+    require(product.stock >= quantity, 'Insufficient stock');
+    require(msg.value >= product.price * quantity, 'Insufficient payment');
 
-    // Validate shipping details
-    require(bytes(shippingDetails.fullName).length > 0, 'Full name required');
-    require(bytes(shippingDetails.streetAddress).length > 0, 'Street address required');
-    require(bytes(shippingDetails.city).length > 0, 'City required');
-    require(bytes(shippingDetails.state).length > 0, 'State required');
-    require(bytes(shippingDetails.country).length > 0, 'Country required');
-    require(bytes(shippingDetails.postalCode).length > 0, 'Postal code required');
-    require(bytes(shippingDetails.phone).length > 0, 'Phone required');
-    require(bytes(shippingDetails.email).length > 0, 'Email required');
-
-    uint256 price = products[productId].price;
-    require(msg.value >= price, 'Insufficient funds');
-
-    products[productId].stock--;
-    if (products[productId].stock == 0) {
-      products[productId].soldout = true;
+    // Update stock
+    product.stock -= quantity;
+    if (product.stock == 0) {
+      product.soldout = true;
     }
 
+    // Record the purchase
     _recordPurchase(
       productId,
       msg.sender,
-      products[productId].seller,
-      price,
-      price,
-      shippingDetails
+      product.seller,
+      msg.value,
+      product.price * quantity,
+      shippingDetails,
+      selectedColor,
+      selectedSize,
+      quantity
     );
-    _TotalSales.increment();
 
-    // Return excess payment
-    uint256 excess = msg.value - price;
-    if (excess > 0) {
-      payTo(msg.sender, excess);
-    }
-
-    emit ProductPurchased(
-      productId,
-      msg.sender,
-      products[productId].seller,
-      price,
-      block.timestamp
-    );
+    emit ProductPurchased(productId, msg.sender, product.seller, msg.value, block.timestamp);
   }
 
   function _recordPurchase(
@@ -725,17 +719,34 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     address seller,
     uint256 totalAmount,
     uint256 basePrice,
-    ShippingDetails memory shippingDetails
+    ShippingDetails memory shippingDetails,
+    string memory selectedColor,
+    string memory selectedSize,
+    uint256 quantity
   ) internal {
+    ProductStruct storage product = products[productId];
+    
+    OrderDetails memory orderDetails = OrderDetails({
+      name: product.name,
+      images: product.images,
+      selectedColor: selectedColor,
+      selectedSize: selectedSize,
+      quantity: quantity,
+      category: product.category,
+      description: product.description
+    });
+
     PurchaseHistoryStruct memory purchase = PurchaseHistoryStruct({
       productId: productId,
       totalAmount: totalAmount,
       basePrice: basePrice,
       timestamp: block.timestamp,
+      lastUpdated: block.timestamp,
       buyer: buyer,
       seller: seller,
       isDelivered: false,
-      shippingDetails: shippingDetails
+      shippingDetails: shippingDetails,
+      orderDetails: orderDetails
     });
 
     buyerPurchaseHistory[buyer].push(purchase);

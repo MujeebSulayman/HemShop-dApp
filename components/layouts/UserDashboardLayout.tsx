@@ -1,6 +1,9 @@
-import React, { ReactNode, useState } from 'react'
+import React, { ReactNode, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useAccount } from 'wagmi'
+import { getSeller } from '@/services/blockchain'
+import { SellerStatus } from '@/utils/type.dt'
 import {
   HomeIcon,
   ShoppingBagIcon,
@@ -16,36 +19,52 @@ interface UserDashboardLayoutProps {
   children: ReactNode
 }
 
-const navigationItems = [
-  {
-    title: 'Main',
-    items: [
-      { label: 'Dashboard', path: '/dashboard/user', icon: HomeIcon },
-
-      { label: 'Become Vendor', path: '/dashboard/user/becomeVendor', icon: BuildingStorefrontIcon },
-    ]
-  },
-  {
-    title: 'Products',
-    items: [
-      { label: 'All Products', path: '/dashboard/user/products', icon: CubeIcon },
-      { label: 'Create Product', path: '/dashboard/user/products/create', icon: PlusCircleIcon },
-      
-    ]
-  },
-  {
-    title: 'Sales',
-    items: [
-      { label: 'Orders', path: '/dashboard/user/orders', icon: ClipboardDocumentListIcon },
-      { label: 'Purchase History', path: '/dashboard/user/purchasHistory', icon: ClipboardDocumentListIcon },
-      { label: 'wIthdraw', path: '/dashboard/user/withdraw', icon: PlusCircleIcon },
-    ]
-  }
-]
-
 const UserDashboardLayout = ({ children }: UserDashboardLayoutProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isVerifiedSeller, setIsVerifiedSeller] = useState(false)
+  const { address } = useAccount()
   const router = useRouter()
+
+  useEffect(() => {
+    const checkSellerStatus = async () => {
+      if (!address) return
+      try {
+        const seller = await getSeller(address)
+        setIsVerifiedSeller(seller?.status === SellerStatus.Verified)
+      } catch (error) {
+        console.error('Error checking seller status:', error)
+      }
+    }
+
+    checkSellerStatus()
+  }, [address])
+
+  const getNavigationItems = () => [
+    {
+      title: 'Main',
+      items: [
+        { label: 'Dashboard', path: '/dashboard/user', icon: HomeIcon },
+        ...(!isVerifiedSeller ? [
+          { label: 'Become Vendor', path: '/dashboard/user/becomeVendor', icon: BuildingStorefrontIcon }
+        ] : [])
+      ]
+    },
+    {
+      title: 'Products',
+      items: [
+        { label: 'All Products', path: '/dashboard/user/products', icon: CubeIcon },
+        { label: 'Create Product', path: '/dashboard/user/products/create', icon: PlusCircleIcon },
+      ]
+    },
+    {
+      title: 'Sales',
+      items: [
+        { label: 'Orders', path: '/dashboard/user/orders', icon: ClipboardDocumentListIcon },
+        { label: 'Purchase History', path: '/dashboard/user/purchase', icon: ClipboardDocumentListIcon },
+        { label: 'wIthdraw', path: '/dashboard/user/withdraw', icon: PlusCircleIcon },
+      ]
+    }
+  ]
 
   return (
     <div className="flex min-h-screen pt-16 bg-gray-900">
@@ -76,7 +95,7 @@ const UserDashboardLayout = ({ children }: UserDashboardLayoutProps) => {
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-4 h-full">
-            {navigationItems.map((section, idx) => (
+            {getNavigationItems().map((section, idx) => (
               <div key={idx} className="mb-6">
                 {!isCollapsed && (
                   <h3 className="px-4 text-xs font-semibold text-gray-400/80 uppercase tracking-wider mb-2">

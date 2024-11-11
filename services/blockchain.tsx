@@ -18,7 +18,7 @@ import {
 } from '@/utils/type.dt'
 
 // Utility functions
-const toWei = (num: number): bigint => {
+export const toWei = (num: number): bigint => {
   try {
     return ethers.parseEther(num.toString())
   } catch (error) {
@@ -174,35 +174,26 @@ const getSellerBalance = async (seller: string): Promise<number> => {
 const buyProduct = async (
   productId: number,
   shippingDetails: ShippingDetails,
-  price: number,
-  orderDetails: OrderDetails
+  selectedColor: string,
+  selectedSize: string,
+  quantity: number,
+  price: number
 ): Promise<void> => {
   if (!ethereum) throw new Error('No wallet provider found')
 
   try {
     const contract = await getEthereumContract()
 
-    // Validate shipping details
-    const requiredFields = [
-      'fullName',
-      'streetAddress',
-      'city',
-      'state',
-      'country',
-      'postalCode',
-      'phone',
-      'email',
-    ]
-
-    for (const field of requiredFields) {
-      if (!shippingDetails[field as keyof ShippingDetails]) {
-        throw new Error(`Missing required field: ${field}`)
+    const tx = await contract.buyProduct(
+      productId,
+      shippingDetails,
+      selectedColor || '',
+      selectedSize || '',
+      quantity,
+      {
+        value: toWei(price),
       }
-    }
-
-    const tx = await contract.buyProduct(productId, shippingDetails, orderDetails, {
-      value: toWei(price),
-    })
+    )
     await tx.wait()
   } catch (error) {
     console.error('Buy product error:', error)

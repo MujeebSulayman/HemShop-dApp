@@ -82,6 +82,21 @@ const Checkout = () => {
     }))
   }
 
+  const calculateTotalInEth = () => {
+    const subtotalWei = cartItems.reduce((total, item) => {
+      // Convert price from wei to ETH for calculation
+      const priceInEth = Number(ethers.formatEther(item.price))
+      return total + (priceInEth * item.quantity)
+    }, 0)
+
+    // Add fixed gas fee (0.001 ETH)
+    const gasFee = 0.001
+    const totalWithGas = subtotalWei + gasFee
+
+    // Round to 6 decimal places to avoid floating point issues
+    return Number(totalWithGas.toFixed(6))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -104,7 +119,9 @@ const Checkout = () => {
 
     try {
       const item = cartItems[0]
-      const price = item.price
+      const priceInEth = calculateTotalInEth()
+      // Convert ETH back to Wei for the contract call
+      const priceInWei = ethers.parseEther(priceInEth.toString())
 
       await buyProduct(
         Number(item.id),
@@ -112,7 +129,7 @@ const Checkout = () => {
         item.selectedColor || '',
         item.selectedSize || '',
         item.quantity,
-        Number(item.price)
+        Number(ethers.formatEther(priceInWei))
       )
 
       clearCart()
@@ -135,12 +152,6 @@ const Checkout = () => {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const getCartTotal = () => {
-    return cartItems.reduce((total, item) => {
-      return total + BigInt(item.price) * BigInt(item.quantity)
-    }, BigInt(0))
   }
 
   return (
@@ -323,18 +334,16 @@ const Checkout = () => {
               <div className="mt-6 space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white">{ethers.formatEther(getCartTotal())} ETH</span>
+                  <span className="text-white">{calculateTotalInEth() - 0.001} ETH</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Network Fee</span>
-                  <span className="text-white">~0.001 ETH</span>
+                  <span className="text-white">0.001 ETH</span>
                 </div>
                 <div className="pt-4 border-t border-gray-700/50">
                   <div className="flex justify-between text-lg font-semibold">
                     <span className="text-white">Total</span>
-                    <span className="text-white">
-                      {ethers.formatEther(getCartTotal() + BigInt('1000000000000000'))} ETH
-                    </span>
+                    <span className="text-white">{calculateTotalInEth()} ETH</span>
                   </div>
                 </div>
 

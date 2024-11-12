@@ -9,12 +9,12 @@ import {
   coinbaseWallet,
   rainbowWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { sepolia, hardhat, mainnet } from 'wagmi/chains'
+import { sepolia, mainnet, hardhat } from 'wagmi/chains'
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 
 const { chains, publicClient } = configureChains(
-  [sepolia, hardhat, mainnet],
+  [sepolia, mainnet, hardhat],
   [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID as string }), publicProvider()]
 )
 
@@ -39,7 +39,7 @@ const wagmiConfig = createConfig({
 })
 
 const demoAppInfo = {
-  appName: 'HemProp',
+  appName: 'HemShop',
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {

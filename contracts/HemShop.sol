@@ -725,7 +725,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 quantity
   ) internal {
     ProductStruct storage product = products[productId];
-    
+
     OrderDetails memory orderDetails = OrderDetails({
       name: product.name,
       images: product.images,

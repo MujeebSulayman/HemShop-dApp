@@ -2,15 +2,15 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\HP\\Documents\\Projects\\hemShop\\contracts\\HemShop.sol": {
-      "lastModificationDate": 1731422934612,
-      "contentHash": "6151b7a931c4a9cce6148de059afb186",
+      "lastModificationDate": 1731427311725,
+      "contentHash": "48abdda0491c1a48b819473acaf8c2db",
       "sourceName": "contracts/HemShop.sol",
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -55,7 +55,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -95,7 +95,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -143,7 +143,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -185,7 +185,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -225,7 +225,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -265,7 +265,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -308,7 +308,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -348,7 +348,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -390,7 +390,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -432,7 +432,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -472,7 +472,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -514,7 +514,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -554,7 +554,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",
@@ -594,7 +594,7 @@
         "settings": {
           "optimizer": {
             "enabled": true,
-            "runs": 200
+            "runs": 1
           },
           "viaIR": true,
           "evmVersion": "london",

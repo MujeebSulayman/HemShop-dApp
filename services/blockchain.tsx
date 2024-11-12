@@ -487,15 +487,11 @@ const deleteSubCategory = async (id: number): Promise<void> => {
 const getPendingSellers = async (): Promise<string[]> => {
   try {
     const contract = await getEthereumContract()
-    console.log('Contract instance:', contract)
-
     const pendingSellers = await contract.getPendingVerificationUsers()
-    console.log('Raw pending sellers response:', pendingSellers)
-
     return pendingSellers
   } catch (error) {
-    console.error('Error in getPendingSellers:', error)
-    throw error
+    reportError(error)
+    return Promise.reject(error)
   }
 }
 
@@ -725,26 +721,17 @@ const registerUser = async (name: string, email: string, avatar: string): Promis
   }
 }
 
-// Add proper error handling utility
-const reportError = (error: any): void => {
-  console.error('Blockchain error:', error)
-  // Add your error reporting logic here
-}
-
 const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
   try {
     const contract = await getEthereumContract()
     const currentAddress = ethereum.selectedAddress
 
-    // Check if address is contract owner - return true immediately if owner
     const owner = await contract.owner()
     if (owner.toLowerCase() === currentAddress.toLowerCase()) {
-      // Ensure owner has seller access
       await ensureOwnerHasSellerAccess()
       return true
     }
 
-    // For non-owners, check if they are verified sellers
     const sellerStatus = await contract.getSellerStatus(currentAddress)
     return sellerStatus === SellerStatus.Verified
   } catch (error) {
@@ -760,12 +747,10 @@ const updateSellerStatus = async (seller: string, status: SellerStatus): Promise
     const contract = await getEthereumContract()
     const owner = await contract.owner()
 
-    // Verify caller is contract owner
     if (owner.toLowerCase() !== ethereum.selectedAddress.toLowerCase()) {
       throw new Error('Only contract owner can update seller status')
     }
 
-    // Update the seller status
     const tx = await contract.updateSellerStatus(seller, status)
     await tx.wait()
   } catch (error) {
@@ -833,28 +818,6 @@ const structureReview = (reviews: any[]): ReviewStruct[] => {
   }))
 }
 
-const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
-  return history.map((item: any) => ({
-    productId: Number(item.productId),
-    totalAmount: Number(safeFromWei(item.totalAmount)),
-    basePrice: Number(safeFromWei(item.basePrice)),
-    timestamp: Number(item.timestamp),
-    lastUpdated: Number(item.lastUpdated || item.timestamp),
-    buyer: item.buyer,
-    seller: item.seller,
-    isDelivered: item.isDelivered,
-    shippingDetails: item.shippingDetails,
-    orderDetails: {
-      name: item.orderDetails?.name || item.name || '',
-      images: item.orderDetails?.images || item.images || [],
-      selectedColor: item.orderDetails?.selectedColor || item.selectedColor || '',
-      selectedSize: item.orderDetails?.selectedSize || item.selectedSize || '',
-      quantity: Number(item.orderDetails?.quantity) || Number(item.quantity) || 1,
-      price: Number(safeFromWei(item.orderDetails?.price || item.price || '0')),
-    },
-  }))
-}
-
 const safeFromWei = (value: string | number | bigint): string => {
   try {
     // Handle BigInt values
@@ -898,6 +861,28 @@ const getAllOrders = async (): Promise<PurchaseHistoryStruct[]> => {
     reportError(error)
     return []
   }
+}
+
+const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
+  return history.map((item: any) => ({
+    productId: Number(item.productId),
+    totalAmount: Number(safeFromWei(item.totalAmount)),
+    basePrice: Number(safeFromWei(item.basePrice)),
+    timestamp: Number(item.timestamp),
+    lastUpdated: Number(item.lastUpdated || item.timestamp),
+    buyer: item.buyer,
+    seller: item.seller,
+    isDelivered: item.isDelivered,
+    shippingDetails: item.shippingDetails,
+    orderDetails: {
+      name: item.orderDetails?.name || item.name || '',
+      images: item.orderDetails?.images || item.images || [],
+      selectedColor: item.orderDetails?.selectedColor || item.selectedColor || '',
+      selectedSize: item.orderDetails?.selectedSize || item.selectedSize || '',
+      quantity: Number(item.orderDetails?.quantity) || Number(item.quantity) || 1,
+      price: Number(safeFromWei(item.orderDetails?.price || item.price || '0')),
+    },
+  }))
 }
 
 export {

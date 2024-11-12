@@ -13,10 +13,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -58,10 +54,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -100,10 +92,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -140,10 +128,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -188,10 +172,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -228,10 +208,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -268,10 +244,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -308,10 +280,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -351,10 +319,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -393,10 +357,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -435,10 +395,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -475,10 +431,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -517,10 +469,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -557,10 +505,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [
@@ -597,10 +541,6 @@
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "london",
-          "metadata": {
-            "bytecodeHash": "none"
-          },
           "outputSelection": {
             "*": {
               "*": [

@@ -316,13 +316,13 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     );
 
     require(bytes(input.name).length > 0, 'Name cannot be empty');
+    require(bytes(input.description).length > 0, 'Description cannot be empty');
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');
+    require(input.colors.length > 0, 'Colors cannot be empty');
     require(input.categoryId > 0, 'Category ID must be greater than 0');
     require(input.subCategoryId > 0, 'SubCategory ID must be greater than 0');
     require(input.weight > 0, 'Weight must be greater than 0');
-    require(bytes(input.model).length > 0, 'Model cannot be empty');
-    require(bytes(input.brand).length > 0, 'Brand cannot be empty');
     require(input.sku > 0, 'SKU must be greater than 0');
     require(input.images.length > 0, 'Images cannot be empty');
     require(input.images.length <= 5, 'Images cannot be more than 5');
@@ -364,13 +364,10 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(input.price > 0, 'Price must be greater than 0');
     require(input.stock > 0, 'Stock must be greater than 0');
     require(input.colors.length > 0, 'Colors cannot be empty');
-    require(input.sizes.length > 0, 'Sizes cannot be empty');
     require(input.images.length > 0, 'Images cannot be empty');
     require(input.images.length <= 5, 'Images cannot be more than 5');
     require(input.categoryId > 0, 'Category cannot be empty');
     require(input.subCategoryId > 0, 'Sub-category cannot be empty');
-    require(bytes(input.model).length > 0, 'Model cannot be empty');
-    require(bytes(input.brand).length > 0, 'Brand cannot be empty');
     require(input.weight > 0, 'Weight must be greater than 0');
     require(input.sku > 0, 'SKU must be greater than 0');
 
@@ -725,7 +722,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 quantity
   ) internal {
     ProductStruct storage product = products[productId];
-    
+
     OrderDetails memory orderDetails = OrderDetails({
       name: product.name,
       images: product.images,
@@ -922,7 +919,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return registeredSellersList;
   }
 
-  // Add a function to update seller status (only owner/admin)
+  
   function updateSellerStatus(address seller, SellerStatus newStatus) external onlyOwner {
     require(registeredSellers[seller], 'Seller not registered');
     require(newStatus != SellerStatus.Unverified, 'Cannot set status to Unverified');

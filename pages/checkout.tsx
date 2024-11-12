@@ -112,7 +112,7 @@ const Checkout = () => {
         item.selectedColor || '',
         item.selectedSize || '',
         item.quantity,
-        Number(item.price)
+        Number(ethers.formatEther(BigInt(item.price)))
       )
 
       clearCart()

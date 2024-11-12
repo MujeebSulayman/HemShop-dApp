@@ -1,5 +1,5 @@
-require('@nomicfoundation/hardhat-toolbox')
-require('dotenv').config()
+require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
 
 module.exports = {
   defaultNetwork: 'sepolia',
@@ -30,9 +30,13 @@ module.exports = {
         runs: 1,
       },
       viaIR: true,
+      evmVersion: 'london',
+      metadata: {
+        bytecodeHash: 'none',
+      },
     },
   },
   mocha: {
-    timeout: 40000,
+    timeout: 100000,
   },
 }

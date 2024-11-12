@@ -44,6 +44,7 @@ async function saveContractAddress(contract) {
     throw error
   }
 }
+
 async function main() {
   try {
     console.log('Starting deployment process...')

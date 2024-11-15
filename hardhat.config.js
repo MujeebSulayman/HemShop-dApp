@@ -2,7 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
 module.exports = {
-  defaultNetwork: 'sepolia',
+  defaultNetwork: 'localhost',
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,

@@ -9,23 +9,17 @@ import '@openzeppelin/contracts/utils/Counters.sol';
 contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   using Counters for Counters.Counter;
 
-  // --- State Variables ---
-
-  // Counters
   Counters.Counter private _TotalProducts;
   Counters.Counter private _TotalSales;
   Counters.Counter private _TotalReviews;
   uint256 private _categoryCounter;
   uint256 private _subCategoryCounter;
 
-  // Core settings
   uint256 public servicePct;
 
-  // Lists
   address[] private registeredSellersList;
   address[] public usersList;
 
-  // Enums
   enum SellerStatus {
     Unverified,
     Pending,
@@ -33,7 +27,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     Suspended
   }
 
-  // Structs
   struct SellerProfile {
     string businessName;
     string description;
@@ -147,36 +140,26 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     string description;
   }
 
-  // --- Mappings ---
-
-  // User & Seller mappings
   mapping(address => UserProfile) public userProfiles;
   mapping(address => SellerProfile) public sellerProfiles;
   mapping(address => SellerStatus) public sellerStatus;
   mapping(address => bool) public registeredSellers;
   mapping(address => bool) public registeredUsers;
 
-  // Product mappings
   mapping(uint256 => ProductStruct) public products;
   mapping(address => uint256[]) public sellerProducts;
   mapping(uint256 => bool) public productExists;
 
-  // Category mappings
   mapping(uint256 => Category) private categories;
   mapping(uint256 => SubCategory) private subCategories;
 
-  // Transaction mappings
   mapping(address => uint256) public sellerBalances;
   mapping(address => PurchaseHistoryStruct[]) public buyerPurchaseHistory;
   mapping(address => PurchaseHistoryStruct[]) public sellerPurchaseHistory;
 
-  // Review mappings
   mapping(uint256 => bool) public reviewExists;
 
-  // Admin mappings
   mapping(address => address) public adminImpersonating;
-
-  // --- Events ---
 
   event CategoryCreated(uint256 indexed id, string name);
   event SubCategoryCreated(uint256 indexed id, uint256 indexed parentId, string name);
@@ -204,10 +187,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   event AdminImpersonationChanged(address admin, address impersonatedAccount);
   event UserRegistered(address indexed user, string name);
 
-  // --- Modifiers ---
-
   modifier onlyVerifiedSellerOrOwner() {
-    // Owner always has access
     if (msg.sender == owner()) {
       _;
       return;
@@ -228,13 +208,9 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     _;
   }
 
-  // --- Constructor ---
-
   constructor(uint256 _pct) ERC721('HemShop', 'Hsp') {
     servicePct = _pct;
   }
-
-  // --- User Management ---
 
   function registerUser(string memory name, string memory email, string memory avatar) external {
     require(msg.sender != address(0), 'Invalid address');
@@ -255,8 +231,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
     emit UserRegistered(msg.sender, name);
   }
-
-  // --- Seller Management ---
 
   function registerSeller(
     string memory businessName,
@@ -282,7 +256,7 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     });
 
     registeredSellers[msg.sender] = true;
-    // Set initial status as Pending instead of Verified
+
     sellerStatus[msg.sender] = SellerStatus.Pending;
 
     if (!isSellerInList(msg.sender)) {
@@ -300,14 +274,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
 
   function getSellerStatus(address seller) external view returns (SellerStatus) {
     require(seller != address(0), 'Invalid seller address');
-    // Contract owner is always considered verified
     if (seller == owner()) {
       return SellerStatus.Verified;
     }
     return sellerStatus[seller];
   }
-
-  // --- Product Management ---
 
   function createProduct(ProductInput calldata input) external {
     require(
@@ -488,8 +459,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return categoryProducts;
   }
 
-  // --- Category Management ---
-
   function createCategory(string memory _name) external onlyOwner {
     require(bytes(_name).length > 0, 'Category name cannot be empty');
 
@@ -615,8 +584,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     }
   }
 
-  // --- Review Management ---
-
   function createReview(uint256 productId, uint256 rating, string memory comment) external {
     require(products[productId].seller != msg.sender, 'Seller cannot review their own product');
     require(rating > 0 && rating <= 5, 'Rating must be between 1 and 5');
@@ -673,8 +640,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return reviews;
   }
 
-  // --- Purchase Management ---
-
   function buyProduct(
     uint256 productId,
     ShippingDetails calldata shippingDetails,
@@ -688,13 +653,11 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     require(product.stock >= quantity, 'Insufficient stock');
     require(msg.value >= product.price * quantity, 'Insufficient payment');
 
-    // Update stock
     product.stock -= quantity;
     if (product.stock == 0) {
       product.soldout = true;
     }
 
-    // Record the purchase
     _recordPurchase(
       productId,
       msg.sender,
@@ -758,15 +721,12 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     uint256 balance = sellerBalances[msg.sender];
     require(balance > 0, 'No balance to withdraw');
 
-    // Calculate service fee
     uint256 serviceFee = (balance * servicePct) / 100;
     uint256 sellerAmount = balance - serviceFee;
 
-    // Clear balance first
     sellerBalances[msg.sender] = 0;
     emit BalanceUpdated(msg.sender, 0);
 
-    // Then perform transfers
     payTo(owner(), serviceFee);
     payTo(msg.sender, sellerAmount);
   }
@@ -793,7 +753,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
   ) external onlyVerifiedSellerOrOwner {
     bool found = false;
 
-    // Update buyer's purchase history
     for (uint i = 0; i < buyerPurchaseHistory[buyer].length; i++) {
       if (buyerPurchaseHistory[buyer][i].productId == productId) {
         require(!buyerPurchaseHistory[buyer][i].isDelivered, 'Already marked as delivered');
@@ -807,7 +766,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
       }
     }
 
-    // Update seller's purchase history
     if (found) {
       address seller = products[productId].seller;
       for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
@@ -838,8 +796,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     emit SubCategoryUpdated(_id, subCategories[_id].name, false);
   }
 
-  // --- Admin Functions ---
-
   function impersonateAccount(address account) external onlyOwner {
     require(account != address(0), 'Invalid account address');
     adminImpersonating[msg.sender] = account;
@@ -861,8 +817,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     (bool success, ) = payable(to).call{ value: amount }('');
     require(success, 'Transfer failed');
   }
-
-  // --- Helper Functions ---
 
   function isSellerInList(address seller) internal view returns (bool) {
     for (uint i = 0; i < registeredSellersList.length; i++) {
@@ -919,7 +873,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return registeredSellersList;
   }
 
-  
   function updateSellerStatus(address seller, SellerStatus newStatus) external onlyOwner {
     require(registeredSellers[seller], 'Seller not registered');
     require(newStatus != SellerStatus.Unverified, 'Cannot set status to Unverified');

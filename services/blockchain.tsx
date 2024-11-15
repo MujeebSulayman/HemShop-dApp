@@ -898,6 +898,17 @@ const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
   }))
 }
 
+const getServiceFee = async (): Promise<number> => {
+  try {
+    const contract = await getEthereumContract()
+    const fee = await contract.servicePct()
+    return Number(fee)
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
 export {
   createProduct,
   updateProduct,
@@ -946,4 +957,5 @@ export {
   markOrderDelivered,
   getAllOrders,
   type CategoryStruct,
+  getServiceFee,
 }

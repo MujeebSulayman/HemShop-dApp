@@ -150,7 +150,23 @@ const getMyProducts = async (): Promise<ProductStruct[]> => {
 const getProducts = async (): Promise<ProductStruct[]> => {
   const contract = await getEthereumContract()
   const products = await contract.getAllProducts()
-  return structureProduct(products)
+  
+  // Get all orders to calculate revenue
+  const orders = await getAllOrders()
+  
+  // Calculate revenue per product
+  const productRevenue = orders.reduce((acc, order) => {
+    acc[order.productId] = (acc[order.productId] || 0) + order.totalAmount
+    return acc
+  }, {} as { [key: number]: number })
+  
+  // Add revenue to each product
+  const productsWithRevenue = structureProduct(products).map(product => ({
+    ...product,
+    revenue: productRevenue[Number(product.id)] || 0
+  }))
+  
+  return productsWithRevenue
 }
 
 const getProductsByCategory = async (category: string): Promise<ProductStruct[]> => {
@@ -656,7 +672,7 @@ const getAllSellers = async (): Promise<SellerData[]> => {
 }
 
 const getSeller = async (address: string): Promise<SellerData> => {
-  try {
+  
     const contract = await getEthereumContract()
     const sellerData = await contract.getSeller(address)
 
@@ -675,10 +691,7 @@ const getSeller = async (address: string): Promise<SellerData> => {
       balance: parseFloat(fromWei(sellerData.balance)),
       productIds: sellerData.productIds.map((id: any) => Number(id)),
     }
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
+  
 }
 
 const getUser = async (address: string): Promise<UserData> => {

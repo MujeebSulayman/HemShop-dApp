@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import withAdminLayout from '@/components/hoc/withAdminLayout'
 import Link from 'next/link'
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiFilter, FiTrendingUp, FiPackage, FiAlertCircle, FiDollarSign, FiGrid, FiList, FiChevronDown, FiSliders, FiX, FiCheck } from 'react-icons/fi'
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiTrendingUp, FiPackage, FiAlertCircle, FiDollarSign, FiGrid, FiList, FiChevronDown, FiX } from 'react-icons/fi'
 import { getProducts, deleteProduct } from '@/services/blockchain'
 import { toast } from 'react-toastify'
 import { useAccount } from 'wagmi'
@@ -19,6 +19,7 @@ interface Product {
   createdAt: string
   description: string
   images: string[]
+  revenue?: number
 }
 
 const AdminProducts = () => {
@@ -50,7 +51,7 @@ const AdminProducts = () => {
     },
     {
       title: 'Revenue',
-      value: products.reduce((acc, p) => acc + Number(p.price), 0).toFixed(2),
+      value: products.reduce((acc, p) => acc + (p.revenue || 0), 0).toFixed(2),
       subtitle: 'ETH',
       trend: '+8.1%',
       trendDirection: 'up',

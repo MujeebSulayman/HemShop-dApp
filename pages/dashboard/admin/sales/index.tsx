@@ -31,7 +31,7 @@ const MetricCard = ({ title, value, icon: Icon, trend = null }: { title: string,
           {typeof value === 'number' ? (
             <>
               <FaEthereum className="h-5 w-5 text-blue-400" />
-              {value.toFixed(4)}
+              {value.toFixed()}
             </>
           ) : (
             value
@@ -214,7 +214,7 @@ const SalesOverviewPage = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5">
                       <FaEthereum className="h-4 w-4 text-blue-400" />
-                      <span className="font-medium">{Number(sale.totalAmount).toFixed(4)}</span>
+                      <span className="font-medium">{Number(sale.totalAmount).toFixed()}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">

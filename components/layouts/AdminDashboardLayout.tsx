@@ -30,7 +30,6 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
       title: 'Main',
       items: [
         { label: 'Dashboard', path: '/dashboard/admin', icon: HomeIcon },
-        { label: 'Analytics', path: '/dashboard/admin/analytics', icon: ChartBarIcon },
         { label: 'Sales Overview', path: '/dashboard/admin/sales', icon: CurrencyDollarIcon },
       ],
     },

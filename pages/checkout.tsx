@@ -84,8 +84,8 @@ const Checkout = () => {
 
   const calculateTotalInEth = () => {
     const subtotalWei = cartItems.reduce((total, item) => {
-      // Convert price from wei to ETH for calculation
-      const priceInEth = Number(ethers.formatEther(item.price))
+      // Convert price from wei to ETH for display
+      const priceInEth = Number(fromWei(item.price))
       return total + (priceInEth * item.quantity)
     }, 0)
 
@@ -93,8 +93,8 @@ const Checkout = () => {
     const gasFee = 0.001
     const totalWithGas = subtotalWei + gasFee
 
-    // Round to 6 decimal places to avoid floating point issues
-    return Number(totalWithGas.toFixed(6))
+    // Round to 18 decimal places for precise ETH calculations
+    return Number(totalWithGas.toFixed(18))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,9 +119,11 @@ const Checkout = () => {
 
     try {
       const item = cartItems[0]
-      const priceInEth = calculateTotalInEth()
-      // Convert ETH back to Wei for the contract call
-      const priceInWei = ethers.parseEther(priceInEth.toString())
+      
+      // Calculate the exact price in Wei for the contract
+      const pricePerUnit = BigInt(item.price)
+      const quantity = BigInt(item.quantity)
+      const totalPriceWei = pricePerUnit * quantity
 
       await buyProduct(
         Number(item.id),
@@ -129,7 +131,7 @@ const Checkout = () => {
         item.selectedColor || '',
         item.selectedSize || '',
         item.quantity,
-        Number(ethers.formatEther(BigInt(item.price)))
+        Number(fromWei(totalPriceWei)) // Convert total price to ETH for the contract
       )
 
       clearCart()
@@ -137,9 +139,14 @@ const Checkout = () => {
       router.push('/dashboard/user/purchase')
     } catch (error: any) {
       console.error('Checkout error:', error)
+      console.log('Transaction details:', {
+        price: cartItems[0].price,
+        quantity: cartItems[0].quantity,
+        totalPrice: BigInt(cartItems[0].price) * BigInt(cartItems[0].quantity)
+      })
 
       if (error.reason === 'Insufficient payment') {
-        toast.error('Insufficient funds in your wallet to complete this purchase.')
+        toast.error('Payment amount does not match the product price. Please try again.')
       } else if (error.code === 'ACTION_REJECTED') {
         toast.error('Transaction was rejected. Please try again.')
       } else if (error.code === 'INSUFFICIENT_FUNDS') {

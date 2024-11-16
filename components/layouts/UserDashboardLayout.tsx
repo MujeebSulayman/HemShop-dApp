@@ -6,10 +6,7 @@ import { getSeller } from '@/services/blockchain'
 import { SellerStatus } from '@/utils/type.dt'
 import {
   HomeIcon,
-  ShoppingBagIcon,
   CubeIcon,
-  UserIcon,
-  StarIcon,
   PlusCircleIcon,
   ClipboardDocumentListIcon,
   BuildingStorefrontIcon
@@ -81,7 +78,7 @@ const UserDashboardLayout = ({ children }: UserDashboardLayoutProps) => {
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700/50">
             {!isCollapsed && (
               <span className="text-xl font-semibold text-white/90 transition-opacity duration-200">
-                Seller Dashboard
+                Dashboard
               </span>
             )}
             <button 

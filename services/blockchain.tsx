@@ -294,35 +294,7 @@ const withdraw = async (): Promise<void> => {
   }
 }
 
-const impersonateAccount = async (account: string): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.impersonateAccount(account)
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
 
-const stopImpersonating = async (): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.stopImpersonating()
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
 
 const changeServicePct = async (newPct: number): Promise<void> => {
   if (!ethereum) {
@@ -694,45 +666,7 @@ const getSeller = async (address: string): Promise<SellerData> => {
   
 }
 
-const getUser = async (address: string): Promise<UserData> => {
-  try {
-    const contract = await getEthereumContract()
-    const userData = await contract.getUser(address)
 
-    return {
-      isRegistered: userData.isRegistered,
-      profile: userData.isRegistered
-        ? {
-            name: userData.profile.name,
-            email: userData.profile.email,
-            avatar: userData.profile.avatar,
-            registeredAt: Number(userData.profile.registeredAt),
-            isActive: userData.profile.isActive,
-          }
-        : null,
-      isSeller: userData.isSeller,
-      sellerStatus: userData.sellerStatus,
-    }
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-const registerUser = async (name: string, email: string, avatar: string): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.registerUser(name, email, avatar)
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
 
 const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
   try {
@@ -927,8 +861,6 @@ export {
   updateSellerStatus,
   markPurchaseDelivered,
   withdraw,
-  impersonateAccount,
-  stopImpersonating,
   changeServicePct,
   buyProduct,
   createCategory,
@@ -949,8 +881,6 @@ export {
   registerAndVerifyContractOwner,
   getAllSellers,
   getSeller,
-  getUser,
-  registerUser,
   isOwnerOrVerifiedSeller,
   checkSellerVerification,
   safeFromWei,

@@ -352,11 +352,11 @@ const AdminDashboard = () => {
                   </td>
                   <td className="px-6 py-4">{purchase.productId}</td>
                   <td className="px-6 py-4">
-                    {`${purchase.buyer.slice(0, 6)}...${purchase.buyer.slice(-4)}`}
+                    {`${purchase.buyer.slice(0, 6)}...${purchase.buyer.slice(-6)}`}
                   </td>
                   <td className="px-6 py-4 flex items-center">
                     <FaEthereum className="inline-block mr-1" />
-                    {purchase.totalAmount.toFixed(4)}
+                    {purchase.totalAmount.toFixed()}
                   </td>
                   <td className="px-6 py-4">
                     <span

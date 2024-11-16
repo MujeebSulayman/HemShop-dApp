@@ -35,7 +35,7 @@ const ServiceFeePage = () => {
     try {
       setIsLoading(true)
       await changeServicePct(newFee)
-      await fetchCurrentFee() // Refresh the current fee
+      await fetchCurrentFee()
       toast.success('Service fee updated successfully')
       setNewFee(0)
     } catch (error: any) {

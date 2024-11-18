@@ -9,12 +9,12 @@ import {
   coinbaseWallet,
   rainbowWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { sepolia, mainnet, hardhat } from 'wagmi/chains'
+import { sepolia, mainnet, polygonMumbai, hardhat } from 'wagmi/chains'
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 
 const { chains, publicClient } = configureChains(
-  [sepolia, mainnet, hardhat],
+  [sepolia, polygonMumbai, mainnet, hardhat],
   [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID as string }), publicProvider()]
 )
 

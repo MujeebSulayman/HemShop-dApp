@@ -2,7 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
 module.exports = {
-  defaultNetwork: 'sepolia',
+  defaultNetwork: 'localhost',
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
@@ -12,6 +12,12 @@ module.exports = {
     localhost: {
       url: 'http://127.0.0.1:8545',
       allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 12000000,
+    },
+    polygonMumbai: {
+      url: process.env.NEXT_PUBLIC_RPC_URL,
+      accounts: [process.env.PRIVATE_KEY],
       gas: 12000000,
       blockGasLimit: 12000000,
     },

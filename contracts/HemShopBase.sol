@@ -98,6 +98,79 @@ contract HemShopBase is Ownable, ReentrancyGuard, ERC721 {
 
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
+    // --- Product Management ---
+    function createProduct(ProductInput calldata input) external virtual {
+        require(bytes(input.name).length > 0, 'Name cannot be empty');
+        require(bytes(input.description).length > 0, 'Description cannot be empty');
+        require(input.price > 0, 'Price must be greater than 0');
+        require(input.stock > 0, 'Stock must be greater than 0');
+        require(input.colors.length > 0, 'Colors cannot be empty');
+        require(input.images.length > 0 && input.images.length <= 5, 'Invalid number of images');
+        require(input.categoryId > 0, 'Category ID must be greater than 0');
+        require(input.subCategoryId > 0, 'SubCategory ID must be greater than 0');
+        require(input.weight > 0, 'Weight must be greater than 0');
+        require(input.sku > 0, 'SKU must be greater than 0');
+
+        _TotalProducts.increment();
+        uint256 newProductId = _TotalProducts.current();
+
+        ProductStruct memory product;
+        product.id = newProductId;
+        product.seller = msg.sender;
+        product.name = input.name;
+        product.description = input.description;
+        product.price = input.price;
+        product.stock = input.stock;
+        product.colors = input.colors;
+        product.sizes = input.sizes;
+        product.images = input.images;
+        product.category = categories[input.categoryId].name;
+        product.subCategory = subCategories[input.subCategoryId].name;
+        product.weight = input.weight;
+        product.model = input.model;
+        product.brand = input.brand;
+        product.sku = input.sku;
+
+        products[newProductId] = product;
+        productExists[newProductId] = true;
+        sellerProducts[msg.sender].push(newProductId);
+
+        _mint(msg.sender, newProductId);
+        emit ProductCreated(newProductId, msg.sender);
+    }
+
+    function updateProduct(uint256 productId, ProductInput calldata input) external virtual {
+        require(productExists[productId], 'Product does not exist');
+        require(!products[productId].deleted, 'Product is deleted');
+        require(products[productId].seller == msg.sender, 'Not product owner');
+
+        ProductStruct storage product = products[productId];
+        product.name = input.name;
+        product.description = input.description;
+        product.price = input.price;
+        product.stock = input.stock;
+        product.colors = input.colors;
+        product.sizes = input.sizes;
+        product.images = input.images;
+        product.category = categories[input.categoryId].name;
+        product.subCategory = subCategories[input.subCategoryId].name;
+        product.weight = input.weight;
+        product.model = input.model;
+        product.brand = input.brand;
+        product.sku = input.sku;
+
+        emit ProductUpdated(productId);
+    }
+
+    function deleteProduct(uint256 productId) external virtual {
+        require(productExists[productId], 'Product does not exist');
+        require(!products[productId].deleted, 'Product already deleted');
+        require(products[productId].seller == msg.sender, 'Not product owner');
+
+        products[productId].deleted = true;
+        emit ProductDeleted(productId);
+    }
+
     // --- Category Management ---
     function createCategory(string memory _name) external onlyOwner {
         require(bytes(_name).length > 0, 'Category name cannot be empty');
@@ -148,161 +221,6 @@ contract HemShopBase is Ownable, ReentrancyGuard, ERC721 {
         subCategories[_id].isActive = _isActive;
 
         emit SubCategoryUpdated(_id, _name, _isActive);
-    }
-
-    // --- Product Management ---
-    function createProduct(ProductInput calldata input) external virtual {
-        require(bytes(input.name).length > 0, 'Name cannot be empty');
-        require(bytes(input.description).length > 0, 'Description cannot be empty');
-        require(input.price > 0, 'Price must be greater than 0');
-        require(input.stock > 0, 'Stock must be greater than 0');
-        require(input.colors.length > 0, 'Colors cannot be empty');
-        require(input.images.length > 0 && input.images.length <= 5, 'Invalid number of images');
-        require(input.categoryId > 0, 'Category ID must be greater than 0');
-        require(input.subCategoryId > 0, 'SubCategory ID must be greater than 0');
-        require(input.weight > 0, 'Weight must be greater than 0');
-        require(input.sku > 0, 'SKU must be greater than 0');
-
-        _TotalProducts.increment();
-        uint256 newProductId = _TotalProducts.current();
-
-        ProductStruct memory product;
-        product.id = newProductId;
-        product.seller = msg.sender;
-        product.name = input.name;
-        product.description = input.description;
-        product.price = input.price;
-        product.stock = input.stock;
-        product.colors = input.colors;
-        product.sizes = input.sizes;
-        product.images = input.images;
-        product.category = categories[input.categoryId].name;
-        product.subCategory = subCategories[input.subCategoryId].name;
-        product.weight = input.weight;
-        product.model = input.model;
-        product.brand = input.brand;
-        product.sku = input.sku;
-
-        _mint(msg.sender, newProductId);
-        products[newProductId] = product;
-        productExists[newProductId] = true;
-        sellerProducts[msg.sender].push(newProductId);
-
-        emit ProductCreated(newProductId, msg.sender);
-    }
-
-    function updateProduct(uint256 productId, ProductInput calldata input) external {
-        require(products[productId].seller == msg.sender, 'Only the seller can update their product');
-        require(productExists[productId], 'Product does not exist');
-        require(!products[productId].deleted, 'Product is deleted');
-
-        require(bytes(input.name).length > 0, 'Name cannot be empty');
-        require(bytes(input.description).length > 0, 'Description cannot be empty');
-        require(input.price > 0, 'Price must be greater than 0');
-        require(input.stock > 0, 'Stock must be greater than 0');
-        require(input.colors.length > 0, 'Colors cannot be empty');
-        require(input.images.length > 0, 'Images cannot be empty');
-        require(input.images.length <= 5, 'Images cannot be more than 5');
-        require(input.categoryId > 0, 'Category cannot be empty');
-        require(input.subCategoryId > 0, 'Sub-category cannot be empty');
-        require(input.weight > 0, 'Weight must be greater than 0');
-        require(input.sku > 0, 'SKU must be greater than 0');
-
-        products[productId].name = input.name;
-        products[productId].description = input.description;
-        products[productId].price = input.price;
-        products[productId].stock = input.stock;
-        products[productId].colors = input.colors;
-        products[productId].sizes = input.sizes;
-        products[productId].images = input.images;
-        products[productId].category = categories[input.categoryId].name;
-        products[productId].subCategory = subCategories[input.subCategoryId].name;
-        products[productId].model = input.model;
-        products[productId].brand = input.brand;
-        products[productId].weight = input.weight;
-        products[productId].sku = input.sku;
-
-        emit ProductUpdated(productId);
-    }
-
-    function deleteProduct(uint256 productId) external {
-        require(productExists[productId], 'Product does not exist');
-        require(
-            products[productId].seller == msg.sender || owner() == msg.sender,
-            'Only product seller or owner can delete'
-        );
-        require(!products[productId].deleted, 'Product is already deleted');
-        products[productId].deleted = true;
-        emit ProductDeleted(productId);
-    }
-
-    function getProduct(uint256 productId) public view returns (ProductStruct memory) {
-        require(!products[productId].deleted, 'Product is deleted');
-        require(productExists[productId], 'Product does not exist');
-        return products[productId];
-    }
-
-    function getMyProducts() public view returns (ProductStruct[] memory) {
-        uint256 availableProducts;
-        for (uint i = 1; i <= _TotalProducts.current(); i++) {
-            if (products[i].seller == msg.sender && !products[i].deleted) {
-                availableProducts++;
-            }
-        }
-
-        ProductStruct[] memory productsList = new ProductStruct[](availableProducts);
-        uint256 index = 0;
-        for (uint i = 1; i <= _TotalProducts.current(); i++) {
-            if (products[i].seller == msg.sender && !products[i].deleted) {
-                productsList[index] = products[i];
-                index++;
-            }
-        }
-        return productsList;
-    }
-
-    function getAllProducts() public view returns (ProductStruct[] memory) {
-        uint256 availableProducts;
-        for (uint i = 1; i <= _TotalProducts.current(); i++) {
-            if (!products[i].deleted) {
-                availableProducts++;
-            }
-        }
-
-        ProductStruct[] memory allProductsList = new ProductStruct[](availableProducts);
-        uint256 index = 0;
-        for (uint i = 1; i <= _TotalProducts.current(); i++) {
-            if (!products[i].deleted) {
-                allProductsList[index] = products[i];
-                index++;
-            }
-        }
-        return allProductsList;
-    }
-
-    function getProductsByCategory(string memory categoryName) external view returns (ProductStruct[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 1; i <= _TotalProducts.current(); i++) {
-            if (
-                keccak256(bytes(products[i].category)) == keccak256(bytes(categoryName)) &&
-                !products[i].deleted
-            ) {
-                count++;
-            }
-        }
-
-        ProductStruct[] memory categoryProducts = new ProductStruct[](count);
-        uint256 index = 0;
-        for (uint256 i = 1; i <= _TotalProducts.current(); i++) {
-            if (
-                keccak256(bytes(products[i].category)) == keccak256(bytes(categoryName)) &&
-                !products[i].deleted
-            ) {
-                categoryProducts[index] = products[i];
-                index++;
-            }
-        }
-        return categoryProducts;
     }
 
     // --- Review Management ---
@@ -421,5 +339,75 @@ contract HemShopBase is Ownable, ReentrancyGuard, ERC721 {
                 subCategoryIdArrays[index] = category.subCategoryIds;
             }
         }
+    }
+
+    // --- Product Getters ---
+    function getProduct(uint256 productId) public view returns (ProductStruct memory) {
+        require(!products[productId].deleted, 'Product is deleted');
+        require(productExists[productId], 'Product does not exist');
+        return products[productId];
+    }
+
+    function getMyProducts() public view returns (ProductStruct[] memory) {
+        uint256 availableProducts;
+        for (uint i = 1; i <= _TotalProducts.current(); i++) {
+            if (products[i].seller == msg.sender && !products[i].deleted) {
+                availableProducts++;
+            }
+        }
+
+        ProductStruct[] memory productsList = new ProductStruct[](availableProducts);
+        uint256 index = 0;
+        for (uint i = 1; i <= _TotalProducts.current(); i++) {
+            if (products[i].seller == msg.sender && !products[i].deleted) {
+                productsList[index] = products[i];
+                index++;
+            }
+        }
+        return productsList;
+    }
+
+    function getAllProducts() public view returns (ProductStruct[] memory) {
+        uint256 availableProducts;
+        for (uint i = 1; i <= _TotalProducts.current(); i++) {
+            if (!products[i].deleted) {
+                availableProducts++;
+            }
+        }
+
+        ProductStruct[] memory allProductsList = new ProductStruct[](availableProducts);
+        uint256 index = 0;
+        for (uint i = 1; i <= _TotalProducts.current(); i++) {
+            if (!products[i].deleted) {
+                allProductsList[index] = products[i];
+                index++;
+            }
+        }
+        return allProductsList;
+    }
+
+    function getProductsByCategory(string memory categoryName) external view returns (ProductStruct[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 1; i <= _TotalProducts.current(); i++) {
+            if (
+                keccak256(bytes(products[i].category)) == keccak256(bytes(categoryName)) &&
+                !products[i].deleted
+            ) {
+                count++;
+            }
+        }
+
+        ProductStruct[] memory categoryProducts = new ProductStruct[](count);
+        uint256 index = 0;
+        for (uint256 i = 1; i <= _TotalProducts.current(); i++) {
+            if (
+                keccak256(bytes(products[i].category)) == keccak256(bytes(categoryName)) &&
+                !products[i].deleted
+            ) {
+                categoryProducts[index] = products[i];
+                index++;
+            }
+        }
+        return categoryProducts;
     }
 }

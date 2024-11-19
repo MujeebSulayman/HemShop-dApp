@@ -109,6 +109,8 @@ contract HemShop is HemShopBase {
     event AdminImpersonationChanged(address admin, address impersonatedAccount);
     event UserRegistered(address indexed user, string name);
 
+    constructor(string memory name, string memory symbol) HemShopBase(name, symbol) {}
+
     // --- Modifiers ---
     modifier onlyVerifiedSellerOrOwner() {
         if (msg.sender == owner()) {
@@ -131,23 +133,21 @@ contract HemShop is HemShopBase {
         _;
     }
 
-    modifier onlyRegisteredUser() {
-        require(registeredUsers[msg.sender], "User not registered");
-        _;
+    // --- Override Product Management Functions ---
+    function createProduct(ProductInput calldata input) external override onlyVerifiedSellerOrOwner {
+        HemShopBase.createProduct(input);
     }
 
-    modifier onlyRegisteredSeller() {
-        require(registeredSellers[msg.sender], "Seller not registered");
-        _;
+    function updateProduct(uint256 productId, ProductInput calldata input) external override onlyVerifiedSellerOrOwner {
+        super.updateProduct(productId, input);
     }
 
-    constructor(uint256 _pct) HemShopBase("HemShop", "Hsp") {
-        servicePct = _pct;
+    function deleteProduct(uint256 productId) external override onlyVerifiedSellerOrOwner {
+        super.deleteProduct(productId);
     }
 
-    // --- User Management ---
+    // --- User Management Functions ---
     function registerUser(string memory name, string memory email, string memory avatar) external {
-        require(msg.sender != address(0), 'Invalid address');
         require(!registeredUsers[msg.sender], 'User already registered');
         require(bytes(name).length > 0, 'Name cannot be empty');
         require(bytes(email).length > 0, 'Email cannot be empty');
@@ -162,11 +162,10 @@ contract HemShop is HemShopBase {
 
         registeredUsers[msg.sender] = true;
         usersList.push(msg.sender);
-
         emit UserRegistered(msg.sender, name);
     }
 
-    // --- Seller Management ---
+    // --- Seller Management Functions ---
     function registerSeller(
         string memory businessName,
         string memory description,
@@ -177,6 +176,7 @@ contract HemShop is HemShopBase {
         require(!registeredSellers[msg.sender], 'Already registered as seller');
         require(bytes(businessName).length > 0, 'Business name cannot be empty');
         require(bytes(email).length > 0, 'Email cannot be empty');
+        require(bytes(phone).length > 0, 'Phone cannot be empty');
 
         sellerProfiles[msg.sender] = SellerProfile({
             businessName: businessName,
@@ -190,64 +190,53 @@ contract HemShop is HemShopBase {
 
         registeredSellers[msg.sender] = true;
         sellerStatus[msg.sender] = SellerStatus.Pending;
-
-        if (!isSellerInList(msg.sender)) {
-            registeredSellersList.push(msg.sender);
-        }
+        registeredSellersList.push(msg.sender);
 
         emit SellerRegistered(msg.sender, block.timestamp);
     }
 
-    // --- Purchase Management ---
-    function buyProduct(
+    // --- Purchase Management Functions ---
+    function purchaseProduct(
         uint256 productId,
-        ShippingDetails calldata shippingDetails,
-        string calldata selectedColor,
-        string calldata selectedSize,
-        uint256 quantity
-    ) external payable nonReentrant {
-        require(productExists[productId], 'Product not found');
-        ProductStruct storage product = products[productId];
-        require(!product.deleted, 'Product has been deleted');
-        require(product.stock >= quantity, 'Insufficient stock');
-        require(msg.value >= product.price * quantity, 'Insufficient payment');
+        uint256 quantity,
+        string memory selectedColor,
+        string memory selectedSize,
+        ShippingDetails calldata shipping
+    ) external payable {
+        require(productExists[productId], 'Product does not exist');
+        require(!products[productId].deleted, 'Product is deleted');
+        require(products[productId].stock >= quantity, 'Insufficient stock');
+        require(msg.value >= products[productId].price * quantity, 'Insufficient payment');
+        require(bytes(selectedColor).length > 0, 'Color must be selected');
+        require(bytes(selectedSize).length > 0, 'Size must be selected');
+        require(bytes(shipping.fullName).length > 0, 'Full name is required');
+        require(bytes(shipping.streetAddress).length > 0, 'Street address is required');
+        require(bytes(shipping.city).length > 0, 'City is required');
+        require(bytes(shipping.state).length > 0, 'State is required');
+        require(bytes(shipping.country).length > 0, 'Country is required');
+        require(bytes(shipping.postalCode).length > 0, 'Postal code is required');
+        require(bytes(shipping.phone).length > 0, 'Phone is required');
+        require(bytes(shipping.email).length > 0, 'Email is required');
 
-        // Update stock
+        ProductStruct storage product = products[productId];
+        require(product.seller != msg.sender, 'Cannot buy your own product');
+
+        uint256 totalAmount = product.price * quantity;
+        uint256 serviceFee = (totalAmount * servicePct) / 100;
+        uint256 sellerAmount = totalAmount - serviceFee;
+
+        // Update seller balance
+        sellerBalances[product.seller] += sellerAmount;
+        emit BalanceUpdated(product.seller, sellerBalances[product.seller]);
+
+        // Update product stock
         product.stock -= quantity;
         if (product.stock == 0) {
             product.soldout = true;
         }
 
-        // Record the purchase
-        _recordPurchase(
-            productId,
-            msg.sender,
-            product.seller,
-            msg.value,
-            product.price * quantity,
-            shippingDetails,
-            selectedColor,
-            selectedSize,
-            quantity
-        );
-
-        emit ProductPurchased(productId, msg.sender, product.seller, msg.value, block.timestamp);
-    }
-
-    function _recordPurchase(
-        uint256 productId,
-        address buyer,
-        address seller,
-        uint256 totalAmount,
-        uint256 basePrice,
-        ShippingDetails memory shippingDetails,
-        string memory selectedColor,
-        string memory selectedSize,
-        uint256 quantity
-    ) internal {
-        ProductStruct storage product = products[productId];
-
-        OrderDetails memory orderDetails = OrderDetails({
+        // Create order details
+        OrderDetails memory order = OrderDetails({
             name: product.name,
             images: product.images,
             selectedColor: selectedColor,
@@ -257,75 +246,79 @@ contract HemShop is HemShopBase {
             description: product.description
         });
 
+        // Record purchase history
         PurchaseHistoryStruct memory purchase = PurchaseHistoryStruct({
             productId: productId,
             totalAmount: totalAmount,
-            basePrice: basePrice,
+            basePrice: product.price,
             timestamp: block.timestamp,
             lastUpdated: block.timestamp,
-            buyer: buyer,
-            seller: seller,
+            buyer: msg.sender,
+            seller: product.seller,
             isDelivered: false,
-            shippingDetails: shippingDetails,
-            orderDetails: orderDetails
+            shippingDetails: shipping,
+            orderDetails: order
         });
 
-        buyerPurchaseHistory[buyer].push(purchase);
-        sellerPurchaseHistory[seller].push(purchase);
-        sellerBalances[seller] += totalAmount;
+        buyerPurchaseHistory[msg.sender].push(purchase);
+        sellerPurchaseHistory[product.seller].push(purchase);
 
-        emit PurchaseRecorded(productId, buyer, seller, totalAmount, basePrice, block.timestamp);
+        _TotalSales.increment();
+
+        emit PurchaseRecorded(
+            productId,
+            msg.sender,
+            product.seller,
+            totalAmount,
+            product.price,
+            block.timestamp
+        );
+        emit ProductPurchased(productId, msg.sender, product.seller, totalAmount, block.timestamp);
+
+        // Refund excess payment
+        if (msg.value > totalAmount) {
+            payTo(msg.sender, msg.value - totalAmount);
+        }
     }
 
-    // --- Balance Management ---
-    function withdraw() external nonReentrant {
-        require(registeredSellers[msg.sender], 'Must be a registered seller');
-        uint256 balance = sellerBalances[msg.sender];
-        require(balance > 0, 'No balance to withdraw');
-
-        uint256 serviceFee = (balance * servicePct) / 100;
-        uint256 sellerAmount = balance - serviceFee;
-
+    function withdrawBalance() external {
+        require(sellerBalances[msg.sender] > 0, 'No balance to withdraw');
+        uint256 amount = sellerBalances[msg.sender];
         sellerBalances[msg.sender] = 0;
+        
         emit BalanceUpdated(msg.sender, 0);
-
-        payTo(owner(), serviceFee);
-        payTo(msg.sender, sellerAmount);
+        payTo(msg.sender, amount);
     }
 
-    // --- Purchase History Management ---
-    function markPurchaseDelivered(uint256 productId, address buyer) external onlyVerifiedSellerOrOwner {
+    function updateDeliveryStatus(uint256 productId, address buyer) external {
+        require(msg.sender == products[productId].seller, 'Not the seller');
+        
+        PurchaseHistoryStruct[] storage purchases = buyerPurchaseHistory[buyer];
         bool found = false;
-
-        for (uint i = 0; i < buyerPurchaseHistory[buyer].length; i++) {
-            if (buyerPurchaseHistory[buyer][i].productId == productId) {
-                require(!buyerPurchaseHistory[buyer][i].isDelivered, 'Already marked as delivered');
-                require(
-                    buyerPurchaseHistory[buyer][i].seller == msg.sender || owner() == msg.sender,
-                    'Only seller or owner can mark as delivered'
-                );
-                buyerPurchaseHistory[buyer][i].isDelivered = true;
+        
+        for (uint256 i = 0; i < purchases.length; i++) {
+            if (purchases[i].productId == productId && !purchases[i].isDelivered) {
+                purchases[i].isDelivered = true;
+                purchases[i].lastUpdated = block.timestamp;
                 found = true;
+                
+                // Update seller's purchase history
+                PurchaseHistoryStruct[] storage sellerPurchases = sellerPurchaseHistory[msg.sender];
+                for (uint256 j = 0; j < sellerPurchases.length; j++) {
+                    if (sellerPurchases[j].productId == productId && 
+                        sellerPurchases[j].buyer == buyer) {
+                        sellerPurchases[j].isDelivered = true;
+                        sellerPurchases[j].lastUpdated = block.timestamp;
+                        break;
+                    }
+                }
+                
+                emit DeliveryStatusUpdated(productId, buyer, true);
                 break;
             }
         }
-
-        if (found) {
-            address seller = products[productId].seller;
-            for (uint i = 0; i < sellerPurchaseHistory[seller].length; i++) {
-                if (
-                    sellerPurchaseHistory[seller][i].productId == productId &&
-                    sellerPurchaseHistory[seller][i].buyer == buyer
-                ) {
-                    sellerPurchaseHistory[seller][i].isDelivered = true;
-                    break;
-                }
-            }
-
-            emit DeliveryStatusUpdated(productId, buyer, true);
-        } else {
-            revert('Purchase not found');
-        }
+        
+        require(found, 'Purchase not found or already delivered');
     }
 
     // --- Admin Functions ---

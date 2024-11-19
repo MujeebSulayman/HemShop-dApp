@@ -134,15 +134,15 @@ contract HemShop is HemShopBase {
     }
 
     // --- Override Product Management Functions ---
-    function createProduct(ProductInput calldata input) external override onlyVerifiedSellerOrOwner {
-        HemShopBase.createProduct(input);
+    function createProduct(ProductInput calldata input) public override onlyVerifiedSellerOrOwner {
+        super.createProduct(input);
     }
 
-    function updateProduct(uint256 productId, ProductInput calldata input) external override onlyVerifiedSellerOrOwner {
+    function updateProduct(uint256 productId, ProductInput calldata input) public override onlyVerifiedSellerOrOwner {
         super.updateProduct(productId, input);
     }
 
-    function deleteProduct(uint256 productId) external override onlyVerifiedSellerOrOwner {
+    function deleteProduct(uint256 productId) public override onlyVerifiedSellerOrOwner {
         super.deleteProduct(productId);
     }
 

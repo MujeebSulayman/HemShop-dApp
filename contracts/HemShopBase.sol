@@ -99,7 +99,7 @@ contract HemShopBase is Ownable, ReentrancyGuard, ERC721 {
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {}
 
     // --- Product Management ---
-    function createProduct(ProductInput calldata input) external virtual {
+    function createProduct(ProductInput calldata input) public virtual {
         require(bytes(input.name).length > 0, 'Name cannot be empty');
         require(bytes(input.description).length > 0, 'Description cannot be empty');
         require(input.price > 0, 'Price must be greater than 0');
@@ -139,7 +139,7 @@ contract HemShopBase is Ownable, ReentrancyGuard, ERC721 {
         emit ProductCreated(newProductId, msg.sender);
     }
 
-    function updateProduct(uint256 productId, ProductInput calldata input) external virtual {
+    function updateProduct(uint256 productId, ProductInput calldata input) public virtual {
         require(productExists[productId], 'Product does not exist');
         require(!products[productId].deleted, 'Product is deleted');
         require(products[productId].seller == msg.sender, 'Not product owner');
@@ -162,7 +162,7 @@ contract HemShopBase is Ownable, ReentrancyGuard, ERC721 {
         emit ProductUpdated(productId);
     }
 
-    function deleteProduct(uint256 productId) external virtual {
+    function deleteProduct(uint256 productId) public virtual {
         require(productExists[productId], 'Product does not exist');
         require(!products[productId].deleted, 'Product already deleted');
         require(products[productId].seller == msg.sender, 'Not product owner');

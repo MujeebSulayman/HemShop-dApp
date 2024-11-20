@@ -1,46 +1,45 @@
 const { ethers } = require('hardhat')
 const fs = require('fs')
 
-async function deployContract() {
+async function deployContract(contractName, ...args) {
   let contract
-  const servicePct = 5
-
   try {
-    const HemShopFactory = await ethers.getContractFactory("HemShop")
-    console.log('Deploying HemShop contract...')
+    const ContractFactory = await ethers.getContractFactory(contractName)
+    
+    const bytecodeSize = (ContractFactory.bytecode.length - 2) / 2
+    console.log(`${contractName} bytecode size: ${bytecodeSize} bytes`)
+    if (bytecodeSize > 24576) {
+      console.log(`⚠️  Warning: ${contractName} size (${bytecodeSize} bytes) exceeds the limit of 24576 bytes`)
+    }
 
-    contract = await HemShopFactory.deploy(servicePct)
+    console.log(`Deploying ${contractName} contract...`)
+    contract = await ContractFactory.deploy(...args)
     
     await contract.waitForDeployment()
     const deployedAddress = await contract.getAddress()
 
     const deployedCode = await ethers.provider.getCode(deployedAddress)
     if (deployedCode === '0x') {
-      throw new Error('Contract deployment failed - no code at address')
+      throw new Error(`${contractName} deployment failed - no code at address`)
     }
 
-    console.log(`HemShop deployed to: ${deployedAddress}`)
+    console.log(`${contractName} deployed to: ${deployedAddress}`)
     return contract
   } catch (error) {
-    console.error('Error deploying contract:', error)
+    console.error(`Error deploying ${contractName}:`, error)
     throw error
   }
 }
 
-async function saveContractAddress(contract) {
+async function saveContractAddresses(addresses) {
   try {
-    const deployedAddress = await contract.getAddress()
-    const addressData = {
-      hemShopContract: deployedAddress
-    }
-
     fs.writeFileSync(
       './contracts/contractAddress.json',
-      JSON.stringify(addressData, null, 2)
+      JSON.stringify(addresses, null, 2)
     )
-    console.log('Contract address saved:', deployedAddress)
+    console.log('Contract addresses saved:', addresses)
   } catch (error) {
-    console.error('Error saving contract address:', error)
+    console.error('Error saving contract addresses:', error)
     throw error
   }
 }
@@ -48,8 +47,14 @@ async function saveContractAddress(contract) {
 async function main() {
   try {
     console.log('Starting deployment process...')
-    const contract = await deployContract()
-    await saveContractAddress(contract)
+    
+    const hemShop = await deployContract('HemShop', 5)
+
+    const addresses = {
+      hemShop: await hemShop.getAddress()
+    }
+
+    await saveContractAddresses(addresses)
     console.log('Deployment completed successfully')
   } catch (error) {
     console.error('Deployment failed:', error)

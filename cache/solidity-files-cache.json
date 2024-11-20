@@ -2,20 +2,16 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\HP\\Documents\\Projects\\hemShop\\contracts\\HemShop.sol": {
-      "lastModificationDate": 1731426897174,
+      "lastModificationDate": 1732016794673,
       "contentHash": "6151b7a931c4a9cce6148de059afb186",
       "sourceName": "contracts/HemShop.sol",
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -53,14 +49,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -95,14 +87,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -143,14 +131,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -183,14 +167,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -223,14 +203,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -263,14 +239,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -306,14 +278,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -346,14 +314,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -388,14 +352,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -430,14 +390,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -470,14 +426,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -512,14 +464,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -552,14 +500,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {
@@ -592,14 +536,10 @@
       "solcConfig": {
         "version": "0.8.19",
         "settings": {
+          "viaIR": true,
           "optimizer": {
             "enabled": true,
             "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "metadata": {
-            "bytecodeHash": "none"
           },
           "outputSelection": {
             "*": {

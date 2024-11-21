@@ -150,22 +150,22 @@ const getMyProducts = async (): Promise<ProductStruct[]> => {
 const getProducts = async (): Promise<ProductStruct[]> => {
   const contract = await getEthereumContract()
   const products = await contract.getAllProducts()
-  
+
   // Get all orders to calculate revenue
   const orders = await getAllOrders()
-  
+
   // Calculate revenue per product
   const productRevenue = orders.reduce((acc, order) => {
     acc[order.productId] = (acc[order.productId] || 0) + order.totalAmount
     return acc
   }, {} as { [key: number]: number })
-  
+
   // Add revenue to each product
-  const productsWithRevenue = structureProduct(products).map(product => ({
+  const productsWithRevenue = structureProduct(products).map((product) => ({
     ...product,
-    revenue: productRevenue[Number(product.id)] || 0
+    revenue: productRevenue[Number(product.id)] || 0,
   }))
-  
+
   return productsWithRevenue
 }
 
@@ -293,8 +293,6 @@ const withdraw = async (): Promise<void> => {
     return Promise.reject(error)
   }
 }
-
-
 
 const changeServicePct = async (newPct: number): Promise<void> => {
   if (!ethereum) {
@@ -644,29 +642,25 @@ const getAllSellers = async (): Promise<SellerData[]> => {
 }
 
 const getSeller = async (address: string): Promise<SellerData> => {
-  
-    const contract = await getEthereumContract()
-    const sellerData = await contract.getSeller(address)
+  const contract = await getEthereumContract()
+  const sellerData = await contract.getSeller(address)
 
-    return {
-      address,
-      profile: {
-        businessName: sellerData.profile.businessName,
-        description: sellerData.profile.description,
-        email: sellerData.profile.email,
-        phone: sellerData.profile.phone,
-        logo: sellerData.profile.logo,
-        registeredAt: Number(sellerData.profile.registeredAt),
-        termsAccepted: sellerData.profile.termsAccepted,
-      },
-      status: sellerData.status,
-      balance: parseFloat(fromWei(sellerData.balance)),
-      productIds: sellerData.productIds.map((id: any) => Number(id)),
-    }
-  
+  return {
+    address,
+    profile: {
+      businessName: sellerData.profile.businessName,
+      description: sellerData.profile.description,
+      email: sellerData.profile.email,
+      phone: sellerData.profile.phone,
+      logo: sellerData.profile.logo,
+      registeredAt: Number(sellerData.profile.registeredAt),
+      termsAccepted: sellerData.profile.termsAccepted,
+    },
+    status: sellerData.status,
+    balance: parseFloat(fromWei(sellerData.balance)),
+    productIds: sellerData.productIds.map((id: any) => Number(id)),
+  }
 }
-
-
 
 const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
   try {

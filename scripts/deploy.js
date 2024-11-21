@@ -1,68 +1,46 @@
+require('dotenv').config()
 const { ethers } = require('hardhat')
-const fs = require('fs')
-
-async function deployContract(contractName, ...args) {
-  let contract
-  try {
-    const ContractFactory = await ethers.getContractFactory(contractName)
-    
-    const bytecodeSize = (ContractFactory.bytecode.length - 2) / 2
-    console.log(`${contractName} bytecode size: ${bytecodeSize} bytes`)
-    if (bytecodeSize > 24576) {
-      console.log(`⚠️  Warning: ${contractName} size (${bytecodeSize} bytes) exceeds the limit of 24576 bytes`)
-    }
-
-    console.log(`Deploying ${contractName} contract...`)
-    contract = await ContractFactory.deploy(...args)
-    
-    await contract.waitForDeployment()
-    const deployedAddress = await contract.getAddress()
-
-    const deployedCode = await ethers.provider.getCode(deployedAddress)
-    if (deployedCode === '0x') {
-      throw new Error(`${contractName} deployment failed - no code at address`)
-    }
-
-    console.log(`${contractName} deployed to: ${deployedAddress}`)
-    return contract
-  } catch (error) {
-    console.error(`Error deploying ${contractName}:`, error)
-    throw error
-  }
-}
-
-async function saveContractAddresses(addresses) {
-  try {
-    fs.writeFileSync(
-      './contracts/contractAddress.json',
-      JSON.stringify(addresses, null, 2)
-    )
-    console.log('Contract addresses saved:', addresses)
-  } catch (error) {
-    console.error('Error saving contract addresses:', error)
-    throw error
-  }
-}
 
 async function main() {
-  try {
-    console.log('Starting deployment process...')
-    
-    const hemShop = await deployContract('HemShop', 5)
+  console.log('Starting deployment process...')
 
-    const addresses = {
-      hemShop: await hemShop.getAddress()
+  try {
+    const [deployer] = await ethers.getSigners()
+    console.log('Deploying contracts with the account:', deployer.address)
+
+    console.log('Account balance:', (await ethers.provider.getBalance(deployer.address)).toString())
+
+    const HemShop = await ethers.getContractFactory('HemShop')
+    console.log('Deploying HemShop...')
+
+    const hemShop = await HemShop.deploy(5)
+
+    await hemShop.waitForDeployment()
+
+    console.log('HemShop deployed to:', await hemShop.getAddress())
+
+    // Save the contract address
+    const fs = require('fs')
+    const contractsDir = __dirname + '/../contracts'
+
+    if (!fs.existsSync(contractsDir)) {
+      fs.mkdirSync(contractsDir)
     }
 
-    await saveContractAddresses(addresses)
-    console.log('Deployment completed successfully')
+    fs.writeFileSync(
+      contractsDir + '/contractAddress.json',
+      JSON.stringify({ HemShop: await hemShop.getAddress() }, undefined, 2)
+    )
+
+    console.log('Contract address saved to contractAddress.json')
   } catch (error) {
-    console.error('Deployment failed:', error)
-    process.exitCode = 1
+    console.error('Error in deployment process:', error)
   }
 }
 
-main().catch((error) => {
-  console.error('Unhandled error:', error)
-  process.exitCode = 1
-})
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })

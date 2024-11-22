@@ -2,7 +2,7 @@ require('dotenv').config()
 const { ethers } = require('hardhat')
 
 async function main() {
-  console.log('Deploying Nftmart to Sepolia...')
+  console.log('Starting deployment process...')
 
   try {
     const [deployer] = await ethers.getSigners()
@@ -13,10 +13,19 @@ async function main() {
     const HemShop = await ethers.getContractFactory('HemShop')
     console.log('Deploying HemShop...')
 
-    const hemShop = await HemShop.deploy(5)
-    await hemShop.deployed()
-    console.log('HemShop deployed at:', hemShop.address)
+    const deploymentOptions = {
+      gasLimit: 30000000,
+    }
 
+    const hemShop = await HemShop.deploy(5, deploymentOptions)
+    
+    console.log('Waiting for deployment...')
+    await hemShop.waitForDeployment()
+    
+    const hemShopAddress = await hemShop.getAddress()
+    console.log('HemShop deployed to:', hemShopAddress)
+
+    // Save the contract address
     const fs = require('fs')
     const contractsDir = __dirname + '/../contracts'
 
@@ -26,13 +35,14 @@ async function main() {
 
     fs.writeFileSync(
       contractsDir + '/contractAddress.json',
-      JSON.stringify({ HemShop: hemShop.address }, undefined, 2)
+      JSON.stringify({ HemShop: hemShopAddress }, undefined, 2)
     )
 
     console.log('Contract address saved to contractAddress.json')
-    await hemShop.deployTransaction.wait(6)
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Deployment failed!')
+    console.error('Error details:', error.message)
+    throw error
   }
 }
 

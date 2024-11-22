@@ -12,9 +12,7 @@ import {
   SellerProfile,
   SellerRegistrationParams,
   CategoryStruct,
-  UserData,
   SellerData,
-  OrderDetails,
 } from '@/utils/type.dt'
 
 // Utility functions
@@ -45,11 +43,11 @@ export const getEthereumContract = async () => {
   if (accounts.length > 0) {
     const provider = new ethers.BrowserProvider(ethereum)
     const signer = await provider.getSigner()
-    const contract = new ethers.Contract(address.hemShopContract, abi.abi, signer)
+    const contract = new ethers.Contract(address.HemShop, abi.abi, signer)
     return contract
   } else {
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL)
-    const contract = new ethers.Contract(address.hemShopContract, abi.abi, provider)
+    const contract = new ethers.Contract(address.HemShop, abi.abi, provider)
     return contract
   }
 }

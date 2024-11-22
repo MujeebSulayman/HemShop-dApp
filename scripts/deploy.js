@@ -1,63 +1,54 @@
+require('dotenv').config()
 const { ethers } = require('hardhat')
-const fs = require('fs')
 
-async function deployContract() {
-  let contract
-  const servicePct = 5
+async function main() {
+  console.log('Starting deployment process...')
 
   try {
-    const HemShopFactory = await ethers.getContractFactory("HemShop")
-    console.log('Deploying HemShop contract...')
+    const [deployer] = await ethers.getSigners()
+    console.log('Deploying contracts with the account:', deployer.address)
 
-    contract = await HemShopFactory.deploy(servicePct)
-    
-    await contract.waitForDeployment()
-    const deployedAddress = await contract.getAddress()
+    console.log('Account balance:', (await ethers.provider.getBalance(deployer.address)).toString())
 
-    const deployedCode = await ethers.provider.getCode(deployedAddress)
-    if (deployedCode === '0x') {
-      throw new Error('Contract deployment failed - no code at address')
+    const HemShop = await ethers.getContractFactory('HemShop')
+    console.log('Deploying HemShop...')
+
+    const deploymentOptions = {
+      gasLimit: 30000000,
     }
 
-    console.log(`HemShop deployed to: ${deployedAddress}`)
-    return contract
-  } catch (error) {
-    console.error('Error deploying contract:', error)
-    throw error
-  }
-}
+    const hemShop = await HemShop.deploy(5, deploymentOptions)
+    
+    console.log('Waiting for deployment...')
+    await hemShop.waitForDeployment()
+    
+    const hemShopAddress = await hemShop.getAddress()
+    console.log('HemShop deployed to:', hemShopAddress)
 
-async function saveContractAddress(contract) {
-  try {
-    const deployedAddress = await contract.getAddress()
-    const addressData = {
-      hemShopContract: deployedAddress
+    // Save the contract address
+    const fs = require('fs')
+    const contractsDir = __dirname + '/../contracts'
+
+    if (!fs.existsSync(contractsDir)) {
+      fs.mkdirSync(contractsDir)
     }
 
     fs.writeFileSync(
-      './contracts/contractAddress.json',
-      JSON.stringify(addressData, null, 2)
+      contractsDir + '/contractAddress.json',
+      JSON.stringify({ HemShop: hemShopAddress }, undefined, 2)
     )
-    console.log('Contract address saved:', deployedAddress)
+
+    console.log('Contract address saved to contractAddress.json')
   } catch (error) {
-    console.error('Error saving contract address:', error)
+    console.error('Deployment failed!')
+    console.error('Error details:', error.message)
     throw error
   }
 }
 
-async function main() {
-  try {
-    console.log('Starting deployment process...')
-    const contract = await deployContract()
-    await saveContractAddress(contract)
-    console.log('Deployment completed successfully')
-  } catch (error) {
-    console.error('Deployment failed:', error)
-    process.exitCode = 1
-  }
-}
-
-main().catch((error) => {
-  console.error('Unhandled error:', error)
-  process.exitCode = 1
-})
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })

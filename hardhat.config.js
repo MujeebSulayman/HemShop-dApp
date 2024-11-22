@@ -6,9 +6,9 @@ module.exports = {
   networks: {
     localhost: {
       url: 'http://127.0.0.1:8545',
-      gas: 2100000,
-      gasPrice: 8000000000,
       allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 12000000,
     },
     sepolia: {
       url: process.env.NEXT_PUBLIC_RPC_URL,

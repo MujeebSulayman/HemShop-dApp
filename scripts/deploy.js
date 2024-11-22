@@ -2,7 +2,7 @@ require('dotenv').config()
 const { ethers } = require('hardhat')
 
 async function main() {
-  console.log('Starting deployment process...')
+  console.log('Deploying Nftmart to Sepolia...')
 
   try {
     const [deployer] = await ethers.getSigners()
@@ -14,12 +14,9 @@ async function main() {
     console.log('Deploying HemShop...')
 
     const hemShop = await HemShop.deploy(5)
+    await hemShop.deployed()
+    console.log('HemShop deployed at:', hemShop.address)
 
-    await hemShop.waitForDeployment()
-
-    console.log('HemShop deployed to:', await hemShop.getAddress())
-
-    // Save the contract address
     const fs = require('fs')
     const contractsDir = __dirname + '/../contracts'
 
@@ -29,12 +26,13 @@ async function main() {
 
     fs.writeFileSync(
       contractsDir + '/contractAddress.json',
-      JSON.stringify({ HemShop: await hemShop.getAddress() }, undefined, 2)
+      JSON.stringify({ HemShop: hemShop.address }, undefined, 2)
     )
 
     console.log('Contract address saved to contractAddress.json')
+    await hemShop.deployTransaction.wait(6)
   } catch (error) {
-    console.error('Error in deployment process:', error)
+    console.error('Error:', error)
   }
 }
 

@@ -55,15 +55,15 @@ const UserDashboard = () => {
   }
 
   const statCards = [
-    { label: 'Available Balance', value: `${stats.balance.toFixed(4)} ETH`, change: null as string | null },
+    { label: 'Available Balance', value: `${stats.balance.toFixed()} ETH`, change: null as string | null },
     { label: 'Active Products', value: stats.totalProducts.toString(), change: null as string | null },
     { label: 'Pending Orders', value: stats.pendingOrders.toString(), change: null as string | null },
-    { label: 'Total Sales', value: `${stats.totalSales.toFixed(4)} ETH`, change: null as string | null },
+    { label: 'Total Sales', value: `${stats.totalSales.toFixed()} ETH`, change: null as string | null },
   ]
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">Seller Dashboard</h1>
+      <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
       
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

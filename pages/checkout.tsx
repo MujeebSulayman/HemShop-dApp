@@ -45,11 +45,11 @@ const Checkout = () => {
       fullName: 'Full name',
       email: 'Email',
       phone: 'Phone',
-      streetAddress: 'Street address', 
+      streetAddress: 'Street address',
       city: 'City',
       state: 'State',
       country: 'Country',
-      postalCode: 'Postal code'
+      postalCode: 'Postal code',
     }
 
     Object.entries(requiredFields).forEach(([field, label]) => {
@@ -82,6 +82,21 @@ const Checkout = () => {
     }))
   }
 
+  const calculateTotalInEth = () => {
+    const subtotalWei = cartItems.reduce((total, item) => {
+      // Convert price from wei to ETH for display
+      const priceInEth = Number(fromWei(item.price))
+      return total + (priceInEth * item.quantity)
+    }, 0)
+
+    // Add fixed gas fee (0.001 ETH)
+    const gasFee = 0.001
+    const totalWithGas = subtotalWei + gasFee
+
+    // Round to 18 decimal places for precise ETH calculations
+    return Number(totalWithGas.toFixed(18))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -91,57 +106,59 @@ const Checkout = () => {
     }
 
     if (!address) {
-      toast.error('Please connect your wallet to proceed')
+      toast.error('Please connect your wallet to proceed with checkout')
       return
     }
 
-    if (!cartItems.length) {
+    if (cartItems.length === 0) {
       toast.error('Your cart is empty')
       return
     }
 
     setIsSubmitting(true)
+
     try {
-      for (const item of cartItems) {
-        const itemPrice = Number(safeFromWei(item.price)) * item.quantity
-        
-        await buyProduct(
-          Number(item.id),
-          shippingDetails,
-          Number(itemPrice),
-          { quantity: item.quantity,
-            name: item.name,
-            images: item.images,
-            selectedColor: item.selectedColor || '',
-            selectedSize: item.selectedSize || '',
-            price: Number(item.price) } 
-        )
-      }
+      const item = cartItems[0]
+      
+      // Calculate the exact price in Wei for the contract
+      const pricePerUnit = BigInt(item.price)
+      const quantity = BigInt(item.quantity)
+      const totalPriceWei = pricePerUnit * quantity
+
+      await buyProduct(
+        Number(item.id),
+        shippingDetails,
+        item.selectedColor || '',
+        item.selectedSize || '',
+        item.quantity,
+        Number(fromWei(totalPriceWei)) // Convert total price to ETH for the contract
+      )
 
       clearCart()
       toast.success('Purchase successful! Check your profile for order details.')
       router.push('/dashboard/user/purchase')
     } catch (error: any) {
       console.error('Checkout error:', error)
-      toast.error(error?.message || 'Failed to process purchase. Please try again.')
+      console.log('Transaction details:', {
+        price: cartItems[0].price,
+        quantity: cartItems[0].quantity,
+        totalPrice: BigInt(cartItems[0].price) * BigInt(cartItems[0].quantity)
+      })
+
+      if (error.reason === 'Insufficient payment') {
+        toast.error('Payment amount does not match the product price. Please try again.')
+      } else if (error.code === 'ACTION_REJECTED') {
+        toast.error('Transaction was rejected. Please try again.')
+      } else if (error.code === 'INSUFFICIENT_FUNDS') {
+        toast.error('Insufficient funds in your wallet.')
+      } else if (error.message?.includes('user rejected')) {
+        toast.error('Transaction was cancelled.')
+      } else {
+        toast.error(error?.message || 'Failed to process purchase. Please try again.')
+      }
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const safeFromWei = (value: string | number): string => {
-    try {
-      return ethers.formatEther(value.toString())
-    } catch (error) {
-      console.error('Error converting value:', error)
-      return '0'
-    }
-  }
-
-  const getCartTotal = () => {
-    return cartItems.reduce((total, item) => {
-      return total + (BigInt(item.price) * BigInt(item.quantity))
-    }, BigInt(0))
   }
 
   return (
@@ -281,8 +298,8 @@ const Checkout = () => {
               {/* Cart Items */}
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600">
                 {cartItems.map((item) => (
-                  <div 
-                    key={`${item.id}-${item.selectedColor}-${item.selectedSize}`} 
+                  <div
+                    key={`${item.id}-${item.selectedColor}-${item.selectedSize}`}
                     className="flex gap-4 pb-4 border-b border-gray-700/50"
                   >
                     <img
@@ -312,7 +329,7 @@ const Checkout = () => {
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-sm text-gray-400">Qty: {item.quantity}</span>
                         <span className="text-sm font-medium text-white">
-                          {item.quantity} × {Number(safeFromWei(item.price)).toFixed(4)} ETH
+                          {item.quantity} × {ethers.formatEther(item.price)} ETH
                         </span>
                       </div>
                     </div>
@@ -324,18 +341,16 @@ const Checkout = () => {
               <div className="mt-6 space-y-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white">{ethers.formatEther(getCartTotal().toString())} ETH</span>
+                  <span className="text-white">{calculateTotalInEth() - 0.001} ETH</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Network Fee</span>
-                  <span className="text-white">~0.001 ETH</span>
+                  <span className="text-white">0.001 ETH</span>
                 </div>
                 <div className="pt-4 border-t border-gray-700/50">
                   <div className="flex justify-between text-lg font-semibold">
                     <span className="text-white">Total</span>
-                    <span className="text-white">
-                      {(Number(ethers.formatEther(getCartTotal().toString())) + 0.001).toFixed(4)} ETH
-                    </span>
+                    <span className="text-white">{calculateTotalInEth()} ETH</span>
                   </div>
                 </div>
 

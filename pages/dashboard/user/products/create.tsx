@@ -7,6 +7,10 @@ import { useAccount } from 'wagmi'
 import { getAllCategories, getSubCategory } from '@/services/blockchain'
 import { CategoryStruct, SubCategoryStruct } from '@/utils/type.dt'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/router'
+import { getSeller } from '@/services/blockchain'
+import { SellerStatus } from '@/utils/type.dt'
+import { Loader2, AlertCircle } from 'lucide-react'
 
 import {
   FiBox,
@@ -29,7 +33,10 @@ const generateSKU = () => {
 }
 
 const Create = () => {
+  const router = useRouter()
   const { address } = useAccount()
+  const [loading, setLoading] = useState(true)
+  const [sellerStatus, setSellerStatus] = useState<SellerStatus | null>(null)
 
   const [product, setProduct] = useState<ProductInput>({
     name: '',
@@ -136,6 +143,24 @@ const Create = () => {
       setSubCategories([])
     }
   }, [selectedCategoryId, categories])
+
+  useEffect(() => {
+    const checkSellerStatus = async () => {
+      if (!address) return
+      try {
+        const seller = await getSeller(address)
+        if (seller) {
+          setSellerStatus(seller.status)
+        }
+      } catch (error) {
+        console.error('Error checking seller status:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkSellerStatus()
+  }, [address])
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -265,6 +290,47 @@ const Create = () => {
       ...prev,
       sku: generateSKU(),
     }))
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
+
+  // Show message if not registered or pending
+  if (!sellerStatus || sellerStatus === SellerStatus.Pending) {
+    return (
+      <div className="min-h-screen bg-gray-900 py-12">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-500/10 mb-6">
+              <AlertCircle className="w-8 h-8 text-yellow-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-4">
+              {!sellerStatus
+                ? 'Seller Registration Required'
+                : 'Verification Pending'}
+            </h1>
+            <p className="text-gray-400 text-lg mb-8">
+              {!sellerStatus
+                ? 'You need to register as a seller before you can create products.'
+                : 'Your vendor application is currently under review. Please wait for admin approval.'}
+            </p>
+            <button
+              onClick={() => router.push('/dashboard/user/becomeVendor')}
+              className="inline-flex items-center px-6 py-3 rounded-xl bg-indigo-500 
+                text-white hover:bg-indigo-600 transition-colors"
+            >
+              {!sellerStatus ? 'Register as Seller' : 'Return to Profile'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

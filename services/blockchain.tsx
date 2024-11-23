@@ -12,13 +12,11 @@ import {
   SellerProfile,
   SellerRegistrationParams,
   CategoryStruct,
-  UserData,
   SellerData,
-  OrderDetails,
 } from '@/utils/type.dt'
 
 // Utility functions
-const toWei = (num: number): bigint => {
+export const toWei = (num: number): bigint => {
   try {
     return ethers.parseEther(num.toString())
   } catch (error) {
@@ -150,7 +148,23 @@ const getMyProducts = async (): Promise<ProductStruct[]> => {
 const getProducts = async (): Promise<ProductStruct[]> => {
   const contract = await getEthereumContract()
   const products = await contract.getAllProducts()
-  return structureProduct(products)
+
+  // Get all orders to calculate revenue
+  const orders = await getAllOrders()
+
+  // Calculate revenue per product
+  const productRevenue = orders.reduce((acc, order) => {
+    acc[order.productId] = (acc[order.productId] || 0) + order.totalAmount
+    return acc
+  }, {} as { [key: number]: number })
+
+  // Add revenue to each product
+  const productsWithRevenue = structureProduct(products).map((product) => ({
+    ...product,
+    revenue: productRevenue[Number(product.id)] || 0,
+  }))
+
+  return productsWithRevenue
 }
 
 const getProductsByCategory = async (category: string): Promise<ProductStruct[]> => {
@@ -174,35 +188,26 @@ const getSellerBalance = async (seller: string): Promise<number> => {
 const buyProduct = async (
   productId: number,
   shippingDetails: ShippingDetails,
-  price: number,
-  orderDetails: OrderDetails
+  selectedColor: string,
+  selectedSize: string,
+  quantity: number,
+  price: number
 ): Promise<void> => {
   if (!ethereum) throw new Error('No wallet provider found')
 
   try {
     const contract = await getEthereumContract()
 
-    // Validate shipping details
-    const requiredFields = [
-      'fullName',
-      'streetAddress',
-      'city',
-      'state',
-      'country',
-      'postalCode',
-      'phone',
-      'email',
-    ]
-
-    for (const field of requiredFields) {
-      if (!shippingDetails[field as keyof ShippingDetails]) {
-        throw new Error(`Missing required field: ${field}`)
+    const tx = await contract.buyProduct(
+      productId,
+      shippingDetails,
+      selectedColor || '',
+      selectedSize || '',
+      quantity,
+      {
+        value: toWei(price),
       }
-    }
-
-    const tx = await contract.buyProduct(productId, shippingDetails, orderDetails, {
-      value: toWei(price),
-    })
+    )
     await tx.wait()
   } catch (error) {
     console.error('Buy product error:', error)
@@ -280,36 +285,6 @@ const withdraw = async (): Promise<void> => {
   try {
     const contract = await getEthereumContract()
     tx = await contract.withdraw()
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-const impersonateAccount = async (account: string): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.impersonateAccount(account)
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-const stopImpersonating = async (): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.stopImpersonating()
     await tx.wait()
   } catch (error) {
     reportError(error)
@@ -496,15 +471,11 @@ const deleteSubCategory = async (id: number): Promise<void> => {
 const getPendingSellers = async (): Promise<string[]> => {
   try {
     const contract = await getEthereumContract()
-    console.log('Contract instance:', contract)
-
     const pendingSellers = await contract.getPendingVerificationUsers()
-    console.log('Raw pending sellers response:', pendingSellers)
-
     return pendingSellers
   } catch (error) {
-    console.error('Error in getPendingSellers:', error)
-    throw error
+    reportError(error)
+    return Promise.reject(error)
   }
 }
 
@@ -669,75 +640,24 @@ const getAllSellers = async (): Promise<SellerData[]> => {
 }
 
 const getSeller = async (address: string): Promise<SellerData> => {
-  try {
-    const contract = await getEthereumContract()
-    const sellerData = await contract.getSeller(address)
+  const contract = await getEthereumContract()
+  const sellerData = await contract.getSeller(address)
 
-    return {
-      address,
-      profile: {
-        businessName: sellerData.profile.businessName,
-        description: sellerData.profile.description,
-        email: sellerData.profile.email,
-        phone: sellerData.profile.phone,
-        logo: sellerData.profile.logo,
-        registeredAt: Number(sellerData.profile.registeredAt),
-        termsAccepted: sellerData.profile.termsAccepted,
-      },
-      status: sellerData.status,
-      balance: parseFloat(fromWei(sellerData.balance)),
-      productIds: sellerData.productIds.map((id: any) => Number(id)),
-    }
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
+  return {
+    address,
+    profile: {
+      businessName: sellerData.profile.businessName,
+      description: sellerData.profile.description,
+      email: sellerData.profile.email,
+      phone: sellerData.profile.phone,
+      logo: sellerData.profile.logo,
+      registeredAt: Number(sellerData.profile.registeredAt),
+      termsAccepted: sellerData.profile.termsAccepted,
+    },
+    status: sellerData.status,
+    balance: parseFloat(fromWei(sellerData.balance)),
+    productIds: sellerData.productIds.map((id: any) => Number(id)),
   }
-}
-
-const getUser = async (address: string): Promise<UserData> => {
-  try {
-    const contract = await getEthereumContract()
-    const userData = await contract.getUser(address)
-
-    return {
-      isRegistered: userData.isRegistered,
-      profile: userData.isRegistered
-        ? {
-            name: userData.profile.name,
-            email: userData.profile.email,
-            avatar: userData.profile.avatar,
-            registeredAt: Number(userData.profile.registeredAt),
-            isActive: userData.profile.isActive,
-          }
-        : null,
-      isSeller: userData.isSeller,
-      sellerStatus: userData.sellerStatus,
-    }
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-const registerUser = async (name: string, email: string, avatar: string): Promise<void> => {
-  if (!ethereum) {
-    reportError('Please install a wallet provider')
-    return Promise.reject(new Error('Browser provider not found'))
-  }
-  try {
-    const contract = await getEthereumContract()
-    tx = await contract.registerUser(name, email, avatar)
-    await tx.wait()
-  } catch (error) {
-    reportError(error)
-    return Promise.reject(error)
-  }
-}
-
-// Add proper error handling utility
-const reportError = (error: any): void => {
-  console.error('Blockchain error:', error)
-  // Add your error reporting logic here
 }
 
 const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
@@ -745,15 +665,12 @@ const isOwnerOrVerifiedSeller = async (): Promise<boolean> => {
     const contract = await getEthereumContract()
     const currentAddress = ethereum.selectedAddress
 
-    // Check if address is contract owner - return true immediately if owner
     const owner = await contract.owner()
     if (owner.toLowerCase() === currentAddress.toLowerCase()) {
-      // Ensure owner has seller access
       await ensureOwnerHasSellerAccess()
       return true
     }
 
-    // For non-owners, check if they are verified sellers
     const sellerStatus = await contract.getSellerStatus(currentAddress)
     return sellerStatus === SellerStatus.Verified
   } catch (error) {
@@ -769,12 +686,10 @@ const updateSellerStatus = async (seller: string, status: SellerStatus): Promise
     const contract = await getEthereumContract()
     const owner = await contract.owner()
 
-    // Verify caller is contract owner
     if (owner.toLowerCase() !== ethereum.selectedAddress.toLowerCase()) {
       throw new Error('Only contract owner can update seller status')
     }
 
-    // Update the seller status
     const tx = await contract.updateSellerStatus(seller, status)
     await tx.wait()
   } catch (error) {
@@ -842,28 +757,6 @@ const structureReview = (reviews: any[]): ReviewStruct[] => {
   }))
 }
 
-const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
-  return history.map((item: any) => ({
-    productId: Number(item.productId),
-    totalAmount: Number(safeFromWei(item.totalAmount)),
-    basePrice: Number(safeFromWei(item.basePrice)),
-    timestamp: Number(item.timestamp),
-    lastUpdated: Number(item.lastUpdated || item.timestamp),
-    buyer: item.buyer,
-    seller: item.seller,
-    isDelivered: item.isDelivered,
-    shippingDetails: item.shippingDetails,
-    orderDetails: {
-      name: item.orderDetails?.name || item.name || '',
-      images: item.orderDetails?.images || item.images || [],
-      selectedColor: item.orderDetails?.selectedColor || item.selectedColor || '',
-      selectedSize: item.orderDetails?.selectedSize || item.selectedSize || '',
-      quantity: Number(item.orderDetails?.quantity) || Number(item.quantity) || 1,
-      price: Number(safeFromWei(item.orderDetails?.price || item.price || '0')),
-    },
-  }))
-}
-
 const safeFromWei = (value: string | number | bigint): string => {
   try {
     // Handle BigInt values
@@ -909,6 +802,39 @@ const getAllOrders = async (): Promise<PurchaseHistoryStruct[]> => {
   }
 }
 
+const structurePurchaseHistory = (history: any[]): PurchaseHistoryStruct[] => {
+  return history.map((item: any) => ({
+    productId: Number(item.productId),
+    totalAmount: Number(safeFromWei(item.totalAmount)),
+    basePrice: Number(safeFromWei(item.basePrice)),
+    timestamp: Number(item.timestamp),
+    lastUpdated: Number(item.lastUpdated || item.timestamp),
+    buyer: item.buyer,
+    seller: item.seller,
+    isDelivered: item.isDelivered,
+    shippingDetails: item.shippingDetails,
+    orderDetails: {
+      name: item.orderDetails?.name || item.name || '',
+      images: item.orderDetails?.images || item.images || [],
+      selectedColor: item.orderDetails?.selectedColor || item.selectedColor || '',
+      selectedSize: item.orderDetails?.selectedSize || item.selectedSize || '',
+      quantity: Number(item.orderDetails?.quantity) || Number(item.quantity) || 1,
+      price: Number(safeFromWei(item.orderDetails?.price || item.price || '0')),
+    },
+  }))
+}
+
+const getServiceFee = async (): Promise<number> => {
+  try {
+    const contract = await getEthereumContract()
+    const fee = await contract.servicePct()
+    return Number(fee)
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
 export {
   createProduct,
   updateProduct,
@@ -927,8 +853,6 @@ export {
   updateSellerStatus,
   markPurchaseDelivered,
   withdraw,
-  impersonateAccount,
-  stopImpersonating,
   changeServicePct,
   buyProduct,
   createCategory,
@@ -949,12 +873,11 @@ export {
   registerAndVerifyContractOwner,
   getAllSellers,
   getSeller,
-  getUser,
-  registerUser,
   isOwnerOrVerifiedSeller,
   checkSellerVerification,
   safeFromWei,
   markOrderDelivered,
   getAllOrders,
   type CategoryStruct,
+  getServiceFee,
 }

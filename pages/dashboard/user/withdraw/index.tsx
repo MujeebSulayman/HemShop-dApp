@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { getSellerBalance, withdraw } from '@/services/blockchain'
 import { toast } from 'react-toastify'
+import withUserLayout from '@/components/hoc/withUserLayout'
 
 const Withdraw = () => {
   const { address } = useAccount()
@@ -99,4 +100,4 @@ const Withdraw = () => {
   )
 }
 
-export default withAdminLayout(Withdraw)
+export default withUserLayout(Withdraw)

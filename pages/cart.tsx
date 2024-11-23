@@ -121,7 +121,7 @@ const Cart = () => {
                               <p className="text-sm text-gray-400">Type: {item.productType}</p>
                             )}
                             <p className="text-sm text-gray-400">
-                              Price: {Number(safeFromWei(item.price)).toFixed(4)} ETH
+                              Price: {Number(safeFromWei(item.price)).toString()} ETH
                             </p>
                             <p className="text-sm text-gray-400">Quantity: {item.quantity}</p>
                             {item.selectedColor && (
@@ -133,7 +133,7 @@ const Cart = () => {
                           </div>
                         </div>
                         <p className="text-sm font-medium text-white">
-                          {(Number(safeFromWei(item.price)) * item.quantity).toFixed(4)} ETH
+                          {(Number(safeFromWei(item.price)) * item.quantity).toString()} ETH
                         </p>
                       </div>
                       <div className="mt-4 flex items-center justify-between">
@@ -176,17 +176,17 @@ const Cart = () => {
                 <div className="mt-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-300">Subtotal</p>
-                    <p className="text-sm font-medium text-white">{subtotal.toFixed(4)} ETH</p>
+                    <p className="text-sm font-medium text-white">{subtotal.toString()} ETH</p>
                   </div>
                   
                   <div className="flex items-center justify-between border-t border-gray-700 pt-4">
                     <p className="text-sm text-gray-300">Shipping</p>
-                    <p className="text-sm font-medium text-white">{shippingFee.toFixed(4)} ETH</p>
+                    <p className="text-sm font-medium text-white">{shippingFee.toString()} ETH</p>
                   </div>
                   
                   <div className="flex items-center justify-between border-t border-gray-700 pt-4">
                     <p className="text-base font-medium text-white">Total</p>
-                    <p className="text-base font-medium text-white">{(subtotal + shippingFee).toFixed(4)} ETH</p>
+                    <p className="text-base font-medium text-white">{(subtotal + shippingFee).toString()} ETH</p>
                   </div>
                 </div>
                 <div className="mt-8">

@@ -30,7 +30,6 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
       title: 'Main',
       items: [
         { label: 'Dashboard', path: '/dashboard/admin', icon: HomeIcon },
-        { label: 'Analytics', path: '/dashboard/admin/analytics', icon: ChartBarIcon },
         { label: 'Sales Overview', path: '/dashboard/admin/sales', icon: CurrencyDollarIcon },
       ],
     },
@@ -54,7 +53,6 @@ const AdminDashboardLayout = ({ children }: AdminDashboardLayoutProps) => {
       title: 'System',
       items: [
         { label: 'Service Fee', path: '/dashboard/admin/service-fee', icon: BanknotesIcon },
-        { label: 'Switch Account', path: '/dashboard/admin/switch-account', icon: ArrowPathIcon },
         { label: 'Settings', path: '/dashboard/admin/settings', icon: CogIcon },
       ],
     },

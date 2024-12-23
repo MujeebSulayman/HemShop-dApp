@@ -18,10 +18,10 @@ async function main() {
     }
 
     const hemShop = await HemShop.deploy(5, deploymentOptions)
-    
+
     console.log('Waiting for deployment...')
     await hemShop.waitForDeployment()
-    
+
     const hemShopAddress = await hemShop.getAddress()
     console.log('HemShop deployed to:', hemShopAddress)
 

@@ -102,7 +102,6 @@ export enum SellerStatus {
   Suspended = 3,
 }
 
-// Add contract event types
 export interface ProductPurchasedEvent {
   productId: number
   buyer: string
@@ -117,7 +116,6 @@ export interface DeliveryStatusUpdatedEvent {
   isDelivered: boolean
 }
 
-// Add input type to match contract
 export interface ProductInput {
   name: string
   description: string
@@ -135,7 +133,6 @@ export interface ProductInput {
   seller: string
 }
 
-// Update CartItem interface
 export interface CartItem extends ProductStruct {
   quantity: number
 
@@ -161,7 +158,6 @@ export interface SellerRegistrationParams {
   logo: string
 }
 
-// Add missing event types used in blockchain.tsx
 export interface ContractEvent {
   productId: number
   buyer: string

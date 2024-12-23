@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import { fromWei, getProduct, getReviews } from '@/services/blockchain'
+import { getProduct, getReviews } from '@/services/blockchain'
 import { ProductStruct, ReviewStruct } from '@/utils/type.dt'
 import { useCart } from '@/contexts/CartContext'
 import { useWishlist } from '@/contexts/WishlistContext'

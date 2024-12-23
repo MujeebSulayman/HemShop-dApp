@@ -919,7 +919,6 @@ contract HemShop is Ownable, ReentrancyGuard, ERC721 {
     return registeredSellersList;
   }
 
-  
   function updateSellerStatus(address seller, SellerStatus newStatus) external onlyOwner {
     require(registeredSellers[seller], 'Seller not registered');
     require(newStatus != SellerStatus.Unverified, 'Cannot set status to Unverified');

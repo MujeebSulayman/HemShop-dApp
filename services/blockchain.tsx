@@ -149,10 +149,8 @@ const getProducts = async (): Promise<ProductStruct[]> => {
   const contract = await getEthereumContract()
   const products = await contract.getAllProducts()
 
-  // Get all orders to calculate revenue
   const orders = await getAllOrders()
 
-  // Calculate revenue per product
   const productRevenue = orders.reduce((acc, order) => {
     acc[order.productId] = (acc[order.productId] || 0) + order.totalAmount
     return acc
